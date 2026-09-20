@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { Pressable, Text, View, type PressableStateCallbackType } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { ChevronRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { ProjectIconView } from "@/components/project-icon-view";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useProjects, type ProjectHostError } from "@/hooks/use-projects";
@@ -20,6 +21,9 @@ interface HostProject {
   project: ProjectSummary;
   host: ProjectHostEntry;
 }
+
+const foregroundMutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const ThemedChevronRight = withUnistyles(ChevronRight);
 
 export default function ProjectsScreen({ serverId }: ProjectsScreenProps) {
   const { t } = useTranslation();
@@ -108,7 +112,6 @@ interface ProjectRowProps {
 
 function ProjectRow({ project, host, isFirst, iconDataUri }: ProjectRowProps) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const { viewKey } = project;
   const { projectName } = host;
   const handleNavigate = useCallback(() => {
@@ -146,7 +149,7 @@ function ProjectRow({ project, host, isFirst, iconDataUri }: ProjectRowProps) {
           {projectName}
         </Text>
       </View>
-      <ChevronRight size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+      <ThemedChevronRight size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
     </Pressable>
   );
 }

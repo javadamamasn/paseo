@@ -10,13 +10,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCallback, useMemo, useState, type ReactElement } from "react";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { formatTimeAgo } from "@/utils/time";
 import { type AggregatedAgent } from "@/hooks/use-aggregated-agents";
 import { useSessionStore } from "@/stores/session-store";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { Archive, ChevronRight } from "lucide-react-native";
 import { getProviderIcon } from "@/components/provider-icons";
 import { navigateToAgent } from "@/utils/navigate-to-agent";
@@ -47,6 +48,19 @@ const DATE_SECTION_ORDER = [
   "thisMonth",
   "older",
 ] as const satisfies readonly DateSectionKey[];
+
+const ThemedArchive = withUnistyles(Archive);
+const ThemedChevronRight = withUnistyles(ChevronRight);
+
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
+// Archive size follows the interface-size setting, so it rides along in uniProps;
+// iconSize tokens are static (ICON_SIZE) and stay plain props.
+const mutedArchiveIconProps = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+  size: theme.fontSize.sm,
+});
 
 type FlatListItem =
   | { type: "header"; key: string; section: DateSectionKey }
@@ -179,7 +193,6 @@ function SessionRow({
   onPress: (agent: AggregatedAgent) => void;
   onLongPress: (agent: AggregatedAgent) => void;
 }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const timeAgo = formatTimeAgo(agent.lastActivityAt);
   const agentKey = `${agent.serverId}:${agent.id}`;
@@ -188,6 +201,7 @@ function SessionRow({
   const branch = agent.projectPlacement?.checkout.currentBranch ?? "";
   const workspaceName = agent.projectPlacement?.workspaceName ?? "";
   const ProviderIcon = getProviderIcon(agent.provider, agent.serverId);
+  const ThemedProviderIcon = useMemo(() => withUnistyles(ProviderIcon), [ProviderIcon]);
   const pendingPermissionCount = agent.pendingPermissionCount ?? 0;
   const ranges = useMemo(
     () => ({
@@ -212,17 +226,14 @@ function SessionRow({
   const handlePress = useCallback(() => onPress(agent), [onPress, agent]);
   const handleLongPress = useCallback(() => onLongPress(agent), [onLongPress, agent]);
 
-  const archivedIcon = useMemo(
-    () => <Archive size={theme.fontSize.sm} color={theme.colors.foregroundMuted} />,
-    [theme.fontSize.sm, theme.colors.foregroundMuted],
-  );
+  const archivedIcon = useMemo(() => <ThemedArchive uniProps={mutedArchiveIconProps} />, []);
   const showDesktopAttention =
     !isMobile && showAttentionIndicator && Boolean(agent.requiresAttention);
 
   const agentTitle = (
     <View style={styles.agentTitleRow}>
       <View style={styles.providerIconWrap}>
-        <ProviderIcon size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+        <ThemedProviderIcon size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
       </View>
       <HighlightedText
         text={agent.title || t("agentList.fallbackTitle")}
@@ -253,7 +264,7 @@ function SessionRow({
           />
           {!isMobile ? (
             <>
-              <ChevronRight size={theme.iconSize.xs} color={theme.colors.foregroundMuted} />
+              <ThemedChevronRight size={ICON_SIZE.xs} uniProps={foregroundMutedColorMapping} />
               {agentTitle}
             </>
           ) : null}

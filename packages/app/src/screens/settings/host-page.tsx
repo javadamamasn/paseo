@@ -15,7 +15,7 @@ import type { TFunction } from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, Text, View } from "react-native";
-import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import type { TerminalProfile } from "@getpaseo/protocol/messages";
 import {
   getTerminalProfileIcon,
@@ -83,6 +83,9 @@ const ThemedProfilePencil = withUnistyles(Pencil);
 const ThemedTrash2 = withUnistyles(Trash2);
 const ThemedProfileSquareTerminal = withUnistyles(SquareTerminal);
 const ThemedPlus = withUnistyles(Plus);
+const ThemedGlobe = withUnistyles(Globe);
+const ThemedMonitor = withUnistyles(Monitor);
+const ThemedChevronRight = withUnistyles(ChevronRight);
 
 interface DynamicProviderIconProps {
   iconKey: string;
@@ -105,6 +108,12 @@ const moveDownIcon = <ThemedArrowDown size={ICON_SIZE.sm} uniProps={mutedColorMa
 const editProfileIcon = <ThemedProfilePencil size={ICON_SIZE.sm} uniProps={mutedColorMapping} />;
 const removeProfileIcon = <ThemedTrash2 size={ICON_SIZE.sm} uniProps={destructiveColorMapping} />;
 const addProfileIcon = <ThemedPlus size={ICON_SIZE.sm} uniProps={mutedColorMapping} />;
+const relayBadgeIcon = <ThemedGlobe size={ICON_SIZE.sm} uniProps={mutedColorMapping} />;
+const localBadgeIcon = <ThemedMonitor size={ICON_SIZE.sm} uniProps={mutedColorMapping} />;
+const removeHostIcon = <ThemedTrash2 size={ICON_SIZE.sm} uniProps={destructiveColorMapping} />;
+const pairDeviceChevronIcon = (
+  <ThemedChevronRight size={ICON_SIZE.sm} uniProps={mutedColorMapping} />
+);
 
 function formatHostConnectionLabel(connection: HostConnection, t: TFunction): string {
   if (connection.type === "relay") {
@@ -121,30 +130,29 @@ function formatHostConnectionLabel(connection: HostConnection, t: TFunction): st
 
 function formatActiveConnectionBadge(
   activeConnection: { type: HostConnection["type"]; display: string } | null,
-  theme: ReturnType<typeof useUnistyles>["theme"],
   t: TFunction,
 ): { icon: React.ReactNode; text: string } | null {
   if (!activeConnection) return null;
   if (activeConnection.type === "relay") {
     return {
-      icon: <Globe size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />,
+      icon: relayBadgeIcon,
       text: t("settings.host.badges.relay"),
     };
   }
   if (activeConnection.type === "directSocket" || activeConnection.type === "directPipe") {
     return {
-      icon: <Monitor size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />,
+      icon: localBadgeIcon,
       text: t("settings.host.badges.local"),
     };
   }
   if (activeConnection.type === "remoteSsh") {
     return {
-      icon: <Globe size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />,
+      icon: relayBadgeIcon,
       text: t("settings.host.badges.remoteSsh"),
     };
   }
   return {
-    icon: <Monitor size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />,
+    icon: localBadgeIcon,
     text: activeConnection.display,
   };
 }
@@ -173,7 +181,6 @@ function HostNotFound() {
 
 function HostStatusBadges({ serverId }: { serverId: string }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const snapshot = useHostRuntimeSnapshot(serverId);
   const daemonVersion = useSessionStore(
     (state) => state.sessions[serverId]?.serverInfo?.version ?? null,
@@ -184,23 +191,20 @@ function HostStatusBadges({ serverId }: { serverId: string }) {
   const statusLabel = formatConnectionStatus(connectionStatus);
   const statusTone = getConnectionStatusTone(connectionStatus);
   let statusVariant: StatusBadgeVariant = "muted";
-  let statusDotColor = theme.colors.foregroundMuted;
+  let statusDotVariant = styles.statusDotMuted;
   if (statusTone === "success") {
     statusVariant = "success";
-    statusDotColor = theme.colors.statusDotSuccess;
+    statusDotVariant = styles.statusDotSuccess;
   } else if (statusTone === "warning") {
     statusVariant = "warning";
-    statusDotColor = theme.colors.statusDotWarning;
+    statusDotVariant = styles.statusDotWarning;
   } else if (statusTone === "error") {
     statusVariant = "error";
-    statusDotColor = theme.colors.statusDotDanger;
+    statusDotVariant = styles.statusDotDanger;
   }
-  const connectionBadge = formatActiveConnectionBadge(activeConnection, theme, t);
+  const connectionBadge = formatActiveConnectionBadge(activeConnection, t);
   const versionBadgeText = formatDaemonVersionBadge(daemonVersion);
-  const statusDotStyle = useMemo(
-    () => [styles.statusDot, { backgroundColor: statusDotColor }],
-    [statusDotColor],
-  );
+  const statusDotStyle = useMemo(() => [styles.statusDot, statusDotVariant], [statusDotVariant]);
   const statusLeading = useMemo(() => <View style={statusDotStyle} />, [statusDotStyle]);
 
   return (
@@ -507,7 +511,6 @@ function ConnectionRow({
   onRemove: (connection: HostConnection) => void;
 }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const title = formatHostConnectionLabel(connection, t);
 
   const latencyText = (() => {
@@ -516,7 +519,6 @@ function ConnectionRow({
     if (latencyMs != null) return formatLatency(latencyMs);
     return "—";
   })();
-  const latencyColor = latencyError ? theme.colors.palette.red[300] : theme.colors.foregroundMuted;
 
   const handlePressRemove = useCallback(() => {
     onRemove(connection);
@@ -527,12 +529,8 @@ function ConnectionRow({
     [showBorder],
   );
   const latencyTextStyle = useMemo(
-    () => [styles.connectionLatency, { color: latencyColor }],
-    [latencyColor],
-  );
-  const destructiveTextStyle = useMemo(
-    () => ({ color: theme.colors.destructive }),
-    [theme.colors.destructive],
+    () => [styles.connectionLatency, latencyError && styles.connectionLatencyError],
+    [latencyError],
   );
 
   return (
@@ -546,7 +544,7 @@ function ConnectionRow({
       <Button
         variant="ghost"
         size="sm"
-        textStyle={destructiveTextStyle}
+        textStyle={styles.destructiveText}
         onPress={handlePressRemove}
       >
         {t("settings.host.connections.removeAction")}
@@ -1091,7 +1089,6 @@ function AppendSystemPromptCard({ serverId }: { serverId: string }) {
 
 function PairDeviceRow({ serverId }: { serverId: string }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpen = useCallback(() => setIsModalOpen(true), []);
@@ -1109,7 +1106,7 @@ function PairDeviceRow({ serverId }: { serverId: string }) {
           <Text style={settingsStyles.rowTitle}>{t("settings.host.pairDevices.rowTitle")}</Text>
           <Text style={settingsStyles.rowHint}>{t("settings.host.pairDevices.rowHint")}</Text>
         </View>
-        <ChevronRight size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+        {pairDeviceChevronIcon}
       </Pressable>
 
       <PairDeviceModal
@@ -1132,7 +1129,6 @@ function RemoveHostSection({
   onRemoved?: () => void;
 }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const { removeHost } = useHostMutations();
   const { updateSettings } = useDesktopSettings();
   const { data: daemonStatusData, setStatus } = useDaemonStatus();
@@ -1147,11 +1143,6 @@ function RemoveHostSection({
         : t("settings.host.daemon.remove.title"),
     }),
     [stopsOwnedDaemon, t],
-  );
-
-  const destructiveTextStyle = useMemo(
-    () => ({ color: theme.colors.destructive }),
-    [theme.colors.destructive],
   );
 
   const handleOpenConfirm = useCallback(() => setIsConfirming(true), []);
@@ -1226,11 +1217,6 @@ function RemoveHostSection({
     updateSettings,
   ]);
 
-  const removeIcon = useMemo(
-    () => <Trash2 size={theme.iconSize.sm} color={theme.colors.destructive} />,
-    [theme.iconSize.sm, theme.colors.destructive],
-  );
-
   return (
     <SettingsSection
       title={t("settings.host.daemon.dangerZone")}
@@ -1255,8 +1241,8 @@ function RemoveHostSection({
           <Button
             variant="outline"
             size="sm"
-            leftIcon={removeIcon}
-            textStyle={destructiveTextStyle}
+            leftIcon={removeHostIcon}
+            textStyle={styles.destructiveText}
             onPress={handleOpenConfirm}
             testID="host-page-remove-host-button"
           >
@@ -1724,6 +1710,18 @@ const styles = StyleSheet.create((theme) => ({
     height: 6,
     borderRadius: theme.borderRadius.full,
   },
+  statusDotMuted: {
+    backgroundColor: theme.colors.foregroundMuted,
+  },
+  statusDotSuccess: {
+    backgroundColor: theme.colors.statusDotSuccess,
+  },
+  statusDotWarning: {
+    backgroundColor: theme.colors.statusDotWarning,
+  },
+  statusDotDanger: {
+    backgroundColor: theme.colors.statusDotDanger,
+  },
   badgePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -1750,6 +1748,13 @@ const styles = StyleSheet.create((theme) => ({
   connectionLatency: {
     fontSize: theme.fontSize.base,
     marginRight: theme.spacing[2],
+    color: theme.colors.foregroundMuted,
+  },
+  connectionLatencyError: {
+    color: theme.colors.palette.red[300],
+  },
+  destructiveText: {
+    color: theme.colors.destructive,
   },
   confirmText: {
     color: theme.colors.foregroundMuted,

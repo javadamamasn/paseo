@@ -167,6 +167,7 @@ const ThemedMicVocal = withUnistyles(MicVocal);
 const ThemedFileSymlinkIcon = withUnistyles(FileSymlink);
 const ThemedTriangleAlertIcon = withUnistyles(TriangleAlertIcon);
 const ThemedChevronRightIcon = withUnistyles(ChevronRight);
+const ThemedScissors = withUnistyles(Scissors);
 const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
 const ThemedNotificationInfo = withUnistyles(Info);
 const ThemedNotificationWarning = withUnistyles(TriangleAlertIcon);
@@ -2221,9 +2222,9 @@ export const CompactionMarker = memo(function CompactionMarker({
       <View style={compactionStylesheet.line} />
       <View style={compactionStylesheet.label}>
         {status === "loading" ? (
-          <LoadingSpinner size="small" color="#a1a1aa" />
+          <ThemedLoadingSpinner size="small" uniProps={foregroundMutedColorMapping} />
         ) : (
-          <Scissors size={12} color="#a1a1aa" />
+          <ThemedScissors size={12} uniProps={foregroundMutedColorMapping} />
         )}
         <Text style={compactionStylesheet.text}>{label}</Text>
       </View>

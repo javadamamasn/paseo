@@ -47,8 +47,11 @@ import {
 import { ToolbarButton } from "@/components/ui/pane-content-toolbar";
 import { mutedIconColorMapping } from "@/components/ui/icon-button-chrome";
 import { useWorkspaceLayoutStore } from "@/stores/workspace-layout-store";
+import type { Theme } from "@/styles/theme";
 
 const ThemedX = withUnistyles(X);
+const ThemedPullRequestTabIcon = withUnistyles(PullRequestTabIcon);
+const foregroundMapping = (theme: Theme) => ({ color: theme.colors.foreground });
 
 function logExplorerSidebar(_event: string, _details: Record<string, unknown>): void {}
 
@@ -239,15 +242,10 @@ export function NativeExplorerSidebarDock({
     ],
     [animatedWidthStyle, insets.top, isOpen, theme.colors.surfaceSidebar],
   );
-  const dockContentStyle = useMemo(
-    () => [styles.nativeDockContent, { borderLeftColor: theme.colors.border }],
-    [theme.colors.border],
-  );
-
   return (
     <RetainedPanelActivity active={isOpen}>
       <Animated.View style={dockStyle} testID="native-explorer-sidebar-dock">
-        <View style={dockContentStyle}>
+        <View style={styles.nativeDockContent}>
           <SidebarResizeHandle
             edge="left"
             gesture={resizeGesture}
@@ -326,7 +324,6 @@ function ExplorerSidebarContent({
   isOpen,
   onOpenFile,
 }: SidebarContentProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isCompact = useIsCompactFormFactor();
   const closeButtonLayout = explorerSidebarCloseButtonLayout(isCompact);
@@ -392,12 +389,10 @@ function ExplorerSidebarContent({
               onTabPress={onTabPress}
               testID="explorer-tab-pr"
             >
-              <PullRequestTabIcon
+              <ThemedPullRequestTabIcon
                 forge={prPane.forge}
                 size={13}
-                color={
-                  resolvedTab === "pr" ? theme.colors.foreground : theme.colors.foregroundMuted
-                }
+                uniProps={resolvedTab === "pr" ? foregroundMapping : mutedIconColorMapping}
               />
             </ExplorerTabButton>
           )}
@@ -515,6 +510,7 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     minHeight: 0,
     borderLeftWidth: 1,
+    borderLeftColor: theme.colors.border,
   },
   sidebarContent: {
     flex: 1,

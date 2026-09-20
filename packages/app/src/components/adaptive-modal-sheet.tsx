@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Modal, Platform, Pressable, Text, View } from "react-native";
 import type { DimensionValue, StyleProp, ViewStyle } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
+import { ICON_SIZE, baseColors, type Theme } from "@/styles/theme";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import {
   getOverlayRoot,
@@ -47,6 +48,13 @@ export const SHEET_HORIZONTAL_PADDING_SCALE = 6;
 // trailing rail is the content inset plus this padding. Rows whose trailing
 // glyph should line up with the X must reach the same rail.
 export const SHEET_HEADER_CLOSE_PADDING_SCALE = 2;
+
+const ThemedArrowLeft = withUnistyles(ArrowLeft);
+const ThemedSearch = withUnistyles(Search);
+const ThemedX = withUnistyles(X);
+
+const foregroundMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const foregroundMutedMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
 
 export interface SheetHeaderSearch {
   onChange: (value: string) => void;
@@ -335,9 +343,9 @@ export function SheetHeaderView({
             testID="sheet-header-back"
           >
             {({ pressed }) => (
-              <ArrowLeft
+              <ThemedArrowLeft
                 size={18}
-                color={pressed ? theme.colors.foreground : theme.colors.foregroundMuted}
+                uniProps={pressed ? foregroundMapping : foregroundMutedMapping}
               />
             )}
           </Pressable>
@@ -358,17 +366,14 @@ export function SheetHeaderView({
             onPress={onClose}
           >
             {({ pressed }) => (
-              <X
-                size={16}
-                color={pressed ? theme.colors.foreground : theme.colors.foregroundMuted}
-              />
+              <ThemedX size={16} uniProps={pressed ? foregroundMapping : foregroundMutedMapping} />
             )}
           </Pressable>
         ) : null}
       </View>
       {search ? (
         <View style={styles.searchRow}>
-          <Search size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+          <ThemedSearch size={ICON_SIZE.md} uniProps={foregroundMutedMapping} />
           <AdaptiveTextInput
             // @ts-expect-error - outlineStyle is web-only
             style={[styles.searchInput, isWeb && { outlineStyle: "none" }]}
@@ -389,7 +394,6 @@ export function SheetHeaderView({
 }
 
 export function InlineHeaderView({ header }: { header: SheetHeader }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const back = header.back;
   const handleBackPress = back?.onPress;
@@ -411,9 +415,9 @@ export function InlineHeaderView({ header }: { header: SheetHeader }) {
               testID="sheet-header-back"
             >
               {({ pressed }) => (
-                <ArrowLeft
+                <ThemedArrowLeft
                   size={16}
-                  color={pressed ? theme.colors.foreground : theme.colors.foregroundMuted}
+                  uniProps={pressed ? foregroundMapping : foregroundMutedMapping}
                 />
               )}
             </Pressable>
@@ -427,7 +431,7 @@ export function InlineHeaderView({ header }: { header: SheetHeader }) {
       ) : null}
       {header.search ? (
         <View style={styles.inlineSearchRow}>
-          <Search size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+          <ThemedSearch size={ICON_SIZE.sm} uniProps={foregroundMutedMapping} />
           <AdaptiveTextInput
             // @ts-expect-error - outlineStyle is web-only
             style={[styles.searchInput, isWeb && { outlineStyle: "none" }]}
@@ -494,7 +498,6 @@ export function AdaptiveModalSheet({
   sizeContentToCurrentSnapPoint = true,
   contextBridge = null,
 }: AdaptiveModalSheetProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isMobile = useIsCompactFormFactor();
   const insets = useSafeAreaInsets();
@@ -522,10 +525,7 @@ export function AdaptiveModalSheet({
       <View style={[styles.footer, footerContainerStyle]}>{footer}</View>
     </View>
   ) : null;
-  const handleIndicatorStyle = useMemo(
-    () => ({ backgroundColor: theme.colors.palette.zinc[600] }),
-    [theme.colors.palette.zinc],
-  );
+  const handleIndicatorStyle = useMemo(() => ({ backgroundColor: baseColors.zinc[600] }), []);
   const { sheetRef, handleSheetChange, handleSheetDismiss } = useIsolatedBottomSheetVisibility({
     visible,
     isEnabled: isMobile,

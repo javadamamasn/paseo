@@ -2,10 +2,11 @@ import { useMemo, useState, useCallback, useEffect, type ReactElement } from "re
 import { View, Text } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { ChevronLeft, Import } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import type { Theme } from "@/styles/theme";
 import { MenuHeader } from "@/components/headers/menu-header";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -23,6 +24,9 @@ import { buildOpenProjectRoute } from "@/utils/host-routes";
 const SEARCH_DEBOUNCE_MS = 200;
 
 const sessionsHostOptionTestID = (serverId: string) => `sessions-host-filter-item-${serverId}`;
+
+const foregroundMutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
 
 /**
  * A host that failed while others answered. Without this the list silently
@@ -71,7 +75,6 @@ export function SessionsScreen() {
 }
 
 function SessionsScreenContent() {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const importSession = useImportSession();
   const hosts = useHosts();
@@ -179,7 +182,7 @@ function SessionsScreenContent() {
       {hostErrors.length > 0 ? <SessionHostErrorsBanner errors={hostErrors} t={t} /> : null}
       {isInitialLoad ? (
         <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" color={theme.colors.foregroundMuted} />
+          <ThemedLoadingSpinner size="large" uniProps={foregroundMutedColorMapping} />
         </View>
       ) : null}
       {!isInitialLoad && showLoadError ? (

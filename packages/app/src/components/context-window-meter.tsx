@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import type { Theme } from "@/styles/theme";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProviderUsageTooltipSection } from "@/provider-usage/tooltip-section";
@@ -59,19 +60,104 @@ function formatSessionCost(value: number): string | null {
   return `$${value.toFixed(2)}`;
 }
 
-function getMeterColors(
-  percentage: number,
-  theme: ReturnType<typeof useUnistyles>["theme"],
-): { progress: string; track: string } {
-  const track = theme.colors.surface3;
+interface MeterPalette {
+  track: string;
+  danger: string;
+  warning: string;
+  muted: string;
+}
+
+const meterPaletteMapping = (theme: Theme) => ({
+  palette: {
+    track: theme.colors.surface3,
+    danger: theme.colors.destructive,
+    warning: theme.colors.palette.amber[500],
+    muted: theme.colors.foregroundMuted,
+  } as MeterPalette,
+});
+
+function getProgressStroke(percentage: number, palette: MeterPalette): string {
   if (percentage > 90) {
-    return { progress: theme.colors.destructive, track };
+    return palette.danger;
   }
   if (percentage >= 70) {
-    return { progress: theme.colors.palette.amber[500], track };
+    return palette.warning;
   }
-  return { progress: theme.colors.foregroundMuted, track };
+  return palette.muted;
 }
+
+function MeterRingSvg({
+  svgSize,
+  center,
+  radius,
+  strokeWidth,
+  circumference,
+  clampedPercentage,
+  palette,
+}: {
+  svgSize: number;
+  center: number;
+  radius: number;
+  strokeWidth: number;
+  circumference: number;
+  clampedPercentage: number | null;
+  palette: MeterPalette;
+}) {
+  if (clampedPercentage === null) {
+    return (
+      <Svg
+        width={svgSize}
+        height={svgSize}
+        viewBox={`0 0 ${svgSize} ${svgSize}`}
+        style={styles.svg}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={palette.track}
+          strokeWidth={strokeWidth}
+        />
+      </Svg>
+    );
+  }
+  const dashOffset = circumference - (clampedPercentage / 100) * circumference;
+  return (
+    <Svg
+      width={svgSize}
+      height={svgSize}
+      viewBox={`0 0 ${svgSize} ${svgSize}`}
+      style={styles.svg}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        stroke={palette.track}
+        strokeWidth={strokeWidth}
+      />
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        stroke={getProgressStroke(clampedPercentage, palette)}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={dashOffset}
+      />
+    </Svg>
+  );
+}
+
+const ThemedMeterRingSvg = withUnistyles(MeterRingSvg);
 
 function getMeterGeometry(showPercentage: boolean, glyphSize?: number) {
   if (showPercentage) {
@@ -106,7 +192,6 @@ export function ContextWindowMeter({
   pending = false,
   glyphSize,
 }: ContextWindowMeterProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const { view: providerUsageView, refresh: refreshProviderUsage } = useProviderUsage(
@@ -136,23 +221,15 @@ export function ContextWindowMeter({
     }
     return (
       <View style={geometry.containerStyle}>
-        <Svg
-          width={geometry.svgSize}
-          height={geometry.svgSize}
-          viewBox={`0 0 ${geometry.svgSize} ${geometry.svgSize}`}
-          style={styles.svg}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <Circle
-            cx={geometry.center}
-            cy={geometry.center}
-            r={geometry.radius}
-            fill="none"
-            stroke={theme.colors.surface3}
-            strokeWidth={geometry.strokeWidth}
-          />
-        </Svg>
+        <ThemedMeterRingSvg
+          svgSize={geometry.svgSize}
+          center={geometry.center}
+          radius={geometry.radius}
+          strokeWidth={geometry.strokeWidth}
+          circumference={geometry.circumference}
+          clampedPercentage={null}
+          uniProps={meterPaletteMapping}
+        />
         {showPercentage ? <View style={styles.skeletonLabel} /> : null}
       </View>
     );
@@ -161,8 +238,6 @@ export function ContextWindowMeter({
   const clampedPercentage = clampPercentage(percentage);
   const roundedPercentage = Math.round(percentage);
   const { svgSize, center, radius, strokeWidth, circumference, containerStyle } = geometry;
-  const dashOffset = circumference - (clampedPercentage / 100) * circumference;
-  const colors = getMeterColors(clampedPercentage, theme);
   const formattedSessionCost =
     typeof totalCostUsd === "number" ? formatSessionCost(totalCostUsd) : null;
 
@@ -183,34 +258,15 @@ export function ContextWindowMeter({
             percentage: roundedPercentage,
           })}
         >
-          <Svg
-            width={svgSize}
-            height={svgSize}
-            viewBox={`0 0 ${svgSize} ${svgSize}`}
-            style={styles.svg}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Circle
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke={colors.track}
-              strokeWidth={strokeWidth}
-            />
-            <Circle
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke={colors.progress}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          </Svg>
+          <ThemedMeterRingSvg
+            svgSize={svgSize}
+            center={center}
+            radius={radius}
+            strokeWidth={strokeWidth}
+            circumference={circumference}
+            clampedPercentage={clampedPercentage}
+            uniProps={meterPaletteMapping}
+          />
           {showPercentage ? (
             <Text style={styles.percentageLabel}>{`${roundedPercentage}%`}</Text>
           ) : null}

@@ -1,11 +1,10 @@
-import { useMemo } from "react";
 import { View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 import {
   AGENT_LIFECYCLE_STATUSES,
   type AgentLifecycleStatus,
 } from "@getpaseo/protocol/agent-lifecycle";
-import { deriveSidebarStateBucket } from "@/utils/sidebar-agent-state";
+import { deriveSidebarStateBucket, type SidebarStateBucket } from "@/utils/sidebar-agent-state";
 import { getStatusDotColor } from "@/utils/status-dot-color";
 import { STATUS_INDICATOR_FILLED_DOT_SIZE } from "@/utils/status-indicator-geometry";
 
@@ -22,8 +21,6 @@ export function AgentStatusDot({
   pendingPermissionCount?: number;
   showInactive?: boolean;
 }) {
-  const { theme } = useUnistyles();
-
   if (!status) {
     return null;
   }
@@ -37,28 +34,52 @@ export function AgentStatusDot({
     attentionReason: attentionReason ?? null,
     pendingPermissionCount: pendingPermissionCount ?? 0,
   });
-  const color = getStatusDotColor({ theme, bucket, showDoneAsInactive: showInactive });
+  const dotStyle = getDotStyle(bucket, showInactive);
 
-  if (!color) {
+  if (!dotStyle) {
     return null;
   }
 
-  return <AgentStatusDotView color={color} />;
+  return <View style={dotStyle} />;
 }
 
-function AgentStatusDotView({ color }: { color: string }) {
-  const dotStyle = useMemo(() => [styles.dot, { backgroundColor: color }], [color]);
-  return <View style={dotStyle} />;
+function getDotStyle(bucket: SidebarStateBucket, showInactive: boolean) {
+  switch (bucket) {
+    case "needs_input":
+      return styles.dotNeedsInput;
+    case "failed":
+      return styles.dotFailed;
+    case "running":
+      return styles.dotRunning;
+    case "attention":
+      return styles.dotAttention;
+    case "done":
+      return showInactive ? styles.dotDoneInactive : null;
+    default:
+      return null;
+  }
 }
 
 function isAgentLifecycleStatus(value: string): value is AgentLifecycleStatus {
   return AGENT_LIFECYCLE_STATUSES.some((status) => status === value);
 }
 
-const styles = StyleSheet.create((theme) => ({
-  dot: {
-    width: STATUS_INDICATOR_FILLED_DOT_SIZE,
-    height: STATUS_INDICATOR_FILLED_DOT_SIZE,
-    borderRadius: theme.borderRadius.full,
-  },
-}));
+const styles = StyleSheet.create((theme) => {
+  // One variant per bucket, resolved through the single bucket-to-color map so the
+  // dot can't drift from the status rings and badges (see project-leading-visual.tsx).
+  const dot = (bucket: SidebarStateBucket, showDoneAsInactive = false) =>
+    ({
+      width: STATUS_INDICATOR_FILLED_DOT_SIZE,
+      height: STATUS_INDICATOR_FILLED_DOT_SIZE,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: getStatusDotColor({ theme, bucket, showDoneAsInactive }) ?? undefined,
+    }) as const;
+
+  return {
+    dotNeedsInput: dot("needs_input"),
+    dotFailed: dot("failed"),
+    dotRunning: dot("running"),
+    dotAttention: dot("attention"),
+    dotDoneInactive: dot("done", true),
+  };
+});

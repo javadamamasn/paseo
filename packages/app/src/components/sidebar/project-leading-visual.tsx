@@ -40,6 +40,8 @@ const LEADING_SLOT_HEIGHT = 20;
 
 const ThemedActivityIndicator = withUnistyles(ActivityIndicator);
 const ThemedCircleAlert = withUnistyles(CircleAlert);
+const ThemedChevronDown = withUnistyles(ChevronDown);
+const ThemedChevronRight = withUnistyles(ChevronRight);
 
 const foregroundMutedColorMapping = (theme: Theme) => ({
   color: theme.colors.foregroundMuted,
@@ -243,9 +245,9 @@ function ProjectInlineChevron({ chevron }: { chevron: "expand" | "collapse" | nu
     return null;
   }
   if (chevron === "collapse") {
-    return <ChevronDown size={14} color="#9ca3af" />;
+    return <ThemedChevronDown size={14} uniProps={foregroundMutedColorMapping} />;
   }
-  return <ChevronRight size={14} color="#9ca3af" />;
+  return <ThemedChevronRight size={14} uniProps={foregroundMutedColorMapping} />;
 }
 
 function getStatusDotColorStyle(bucket: ProjectStatusBadgeDotBucket): ViewStyle {

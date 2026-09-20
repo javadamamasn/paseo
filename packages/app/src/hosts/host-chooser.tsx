@@ -14,7 +14,8 @@ import {
 import { router } from "expo-router";
 import { Server } from "lucide-react-native";
 import { create } from "zustand";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { HostStatusDotSlot } from "@/components/hosts/host-picker";
 import { isWeb } from "@/constants/platform";
 import { useLocalDaemonServerId } from "@/hooks/use-is-local-daemon";
@@ -51,6 +52,12 @@ interface HostChooserState {
 }
 
 let nextRequestId = 1;
+
+const ThemedServer = withUnistyles(Server);
+const mutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const ThemedChooserInput = withUnistyles(TextInput, (theme: Theme) => ({
+  placeholderTextColor: theme.colors.foregroundMuted,
+}));
 
 const useHostChooserStore = create<HostChooserState>((set) => ({
   request: null,
@@ -110,7 +117,6 @@ function HostChooserRow({
   active: boolean;
   onChooseHost: (serverId: string) => void;
 }) {
-  const { theme } = useUnistyles();
   const handlePress = useCallback(() => onChooseHost(host.serverId), [host.serverId, onChooseHost]);
   const rowStyle = useCallback(
     ({ hovered = false, pressed }: PressableStateCallbackType & { hovered?: boolean }) => [
@@ -138,13 +144,12 @@ function HostChooserRow({
           {host.serverId}
         </Text>
       </View>
-      <Server size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+      <ThemedServer size={ICON_SIZE.sm} uniProps={mutedColorMapping} />
     </Pressable>
   );
 }
 
 export function HostChooserModal() {
-  const { theme } = useUnistyles();
   const hosts = useHosts();
   const request = useHostChooserStore((state) => state.request);
   const close = useHostChooserStore((state) => state.close);
@@ -248,12 +253,11 @@ export function HostChooserModal() {
         <View ref={setWebOverlayScope} style={styles.panel}>
           <View style={styles.header}>
             <Text style={styles.title}>{request.title}</Text>
-            <TextInput
+            <ThemedChooserInput
               ref={inputRef}
               initialValue={query}
               onChangeText={handleQueryChange}
               placeholder="Search hosts..."
-              placeholderTextColor={theme.colors.foregroundMuted}
               style={styles.input}
               autoCapitalize="none"
               autoCorrect={false}

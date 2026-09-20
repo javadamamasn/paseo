@@ -9,8 +9,9 @@ import {
   type GestureResponderEvent,
   type PressableStateCallbackType,
 } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useIsCompactFormFactor } from "@/constants/layout";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { settingsStyles } from "@/styles/settings";
 import { useHostRuntimeIsConnected } from "@/runtime/host-runtime";
 import { useHostFeature } from "@/runtime/host-features";
@@ -94,14 +95,19 @@ function stopPressInPropagation(event: GestureResponderEvent) {
   event.stopPropagation();
 }
 
+const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const foregroundMutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const dangerColorMapping = (theme: Theme) => ({ color: theme.colors.statusDanger });
+const ThemedChevronRight = withUnistyles(ChevronRight);
+const ThemedMoreHorizontal = withUnistyles(MoreHorizontal);
+const ThemedTrash2 = withUnistyles(Trash2);
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+const removeTrashLeading = <ThemedTrash2 size={ICON_SIZE.md} uniProps={dangerColorMapping} />;
+
 interface ProviderActionsMenuProps {
   providerId: string;
   providerLabel: string;
   isRemoving: boolean;
-  iconSize: number;
-  foregroundColor: string;
-  foregroundMutedColor: string;
-  dangerColor: string;
   onRemove: (providerId: string, providerLabel: string) => void;
 }
 
@@ -109,10 +115,6 @@ function ProviderActionsMenu({
   providerId,
   providerLabel,
   isRemoving,
-  iconSize,
-  foregroundColor,
-  foregroundMutedColor,
-  dangerColor,
   onRemove,
 }: ProviderActionsMenuProps) {
   const { t } = useTranslation();
@@ -131,7 +133,6 @@ function ProviderActionsMenu({
     ],
     [],
   );
-  const trashLeading = useMemo(() => <Trash2 size={16} color={dangerColor} />, [dangerColor]);
 
   return (
     <DropdownMenu>
@@ -145,16 +146,16 @@ function ProviderActionsMenu({
         testID={`provider-actions-${providerId}`}
       >
         {({ hovered, open }) => (
-          <MoreHorizontal
-            size={iconSize}
-            color={hovered || open ? foregroundColor : foregroundMutedColor}
+          <ThemedMoreHorizontal
+            size={ICON_SIZE.sm}
+            uniProps={hovered || open ? foregroundColorMapping : foregroundMutedColorMapping}
           />
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" width={220}>
         <DropdownMenuItem
           destructive
-          leading={trashLeading}
+          leading={removeTrashLeading}
           onSelect={handleRemove}
           status={isRemoving ? "pending" : "idle"}
           pendingLabel={t("settings.providers.actions.removing")}
@@ -181,9 +182,9 @@ function ProviderRow({
   onRemove,
 }: ProviderRowProps) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const isCompact = useIsCompactFormFactor();
   const ProviderIcon = getProviderIcon(def.id, serverId);
+  const ThemedProviderIcon = useMemo(() => withUnistyles(ProviderIcon), [ProviderIcon]);
   const providerError =
     enabled &&
     entry.status === "error" &&
@@ -224,11 +225,11 @@ function ProviderRow({
       {({ hovered }: PressableStateCallbackType & { hovered?: boolean }) => (
         <>
           <View style={styles.rowContent}>
-            <ChevronRight
-              size={theme.iconSize.sm}
-              color={hovered ? theme.colors.foreground : theme.colors.foregroundMuted}
+            <ThemedChevronRight
+              size={ICON_SIZE.sm}
+              uniProps={hovered ? foregroundColorMapping : foregroundMutedColorMapping}
             />
-            <ProviderIcon size={theme.iconSize.md} color={theme.colors.foreground} />
+            <ThemedProviderIcon size={ICON_SIZE.md} uniProps={foregroundColorMapping} />
             <View style={styles.textColumn}>
               <View style={styles.titleRow}>
                 <Text style={settingsStyles.rowTitle} numberOfLines={1}>
@@ -257,10 +258,6 @@ function ProviderRow({
                   providerId={def.id}
                   providerLabel={def.label}
                   isRemoving={isRemoving}
-                  iconSize={theme.iconSize.sm}
-                  foregroundColor={theme.colors.foreground}
-                  foregroundMutedColor={theme.colors.foregroundMuted}
-                  dangerColor={theme.colors.statusDanger}
                   onRemove={onRemove}
                 />
               ) : null}
@@ -272,31 +269,22 @@ function ProviderRow({
   );
 }
 
-function getDotColor(tone: StatusTone, theme: ReturnType<typeof useUnistyles>["theme"]): string {
-  switch (tone) {
-    case "success":
-      return theme.colors.statusSuccess;
-    case "warning":
-      return theme.colors.statusWarning;
-    case "danger":
-      return theme.colors.statusDanger;
-    default:
-      return theme.colors.foregroundMuted;
-  }
-}
-
 function StatusIndicator({ status, compact }: { status: ProviderStatus; compact: boolean }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
-  const dotStyle = useMemo(
-    () => [styles.statusDot, { backgroundColor: getDotColor(status.tone, theme) }],
-    [status.tone, theme],
-  );
+  let dotVariant = styles.statusDotMuted;
+  if (status.tone === "success") {
+    dotVariant = styles.statusDotSuccess;
+  } else if (status.tone === "warning") {
+    dotVariant = styles.statusDotWarning;
+  } else if (status.tone === "danger") {
+    dotVariant = styles.statusDotDanger;
+  }
+  const dotStyle = useMemo(() => [styles.statusDot, dotVariant], [dotVariant]);
 
   return (
     <View style={styles.statusRow}>
       {status.tone === "loading" ? (
-        <LoadingSpinner size={10} color={theme.colors.foregroundMuted} />
+        <ThemedLoadingSpinner size={10} uniProps={foregroundMutedColorMapping} />
       ) : (
         <View style={dotStyle} />
       )}
@@ -504,6 +492,12 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
     gap: theme.spacing[2],
   },
+  chevronIcon: {
+    color: theme.colors.foregroundMuted,
+  },
+  chevronIconHovered: {
+    color: theme.colors.foreground,
+  },
   textColumn: {
     flex: 1,
     minWidth: 0,
@@ -522,6 +516,18 @@ const styles = StyleSheet.create((theme) => ({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  statusDotMuted: {
+    backgroundColor: theme.colors.foregroundMuted,
+  },
+  statusDotSuccess: {
+    backgroundColor: theme.colors.statusSuccess,
+  },
+  statusDotWarning: {
+    backgroundColor: theme.colors.statusWarning,
+  },
+  statusDotDanger: {
+    backgroundColor: theme.colors.statusDanger,
   },
   statusLabel: {
     color: theme.colors.foregroundMuted,
@@ -551,6 +557,12 @@ const styles = StyleSheet.create((theme) => ({
   menuSlot: {
     width: 32,
     height: 32,
+  },
+  menuIcon: {
+    color: theme.colors.foregroundMuted,
+  },
+  menuIconHovered: {
+    color: theme.colors.foreground,
   },
   menuButtonHovered: {
     backgroundColor: theme.colors.surface2,

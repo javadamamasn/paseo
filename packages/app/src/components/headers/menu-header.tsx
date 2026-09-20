@@ -1,7 +1,8 @@
 import { useCallback, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import type { Theme } from "@/styles/theme";
 import { PanelLeft } from "lucide-react-native";
 import { ScreenHeader } from "./screen-header";
 import { ScreenTitle } from "./screen-title";
@@ -29,11 +30,28 @@ const MOBILE_MENU_LINE_WIDTH = 16;
 const MOBILE_MENU_LINE_SHORT_WIDTH = 8;
 const MOBILE_MENU_LINE_HEIGHT = 1.5;
 
-function MobileMenuIcon({ color }: { color: string }) {
-  const lineStyle = useMemo(() => [styles.mobileMenuLine, { backgroundColor: color }], [color]);
+const ThemedPanelLeft = withUnistyles(PanelLeft);
+
+const menuMutedMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const menuExtraMutedMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundExtraMuted,
+});
+
+function MobileMenuIcon({ extraMuted = false }: { extraMuted?: boolean }) {
+  const lineStyle = useMemo(
+    () => [
+      styles.mobileMenuLine,
+      extraMuted ? styles.mobileMenuLineExtraMuted : styles.mobileMenuLineMuted,
+    ],
+    [extraMuted],
+  );
   const shortLineStyle = useMemo(
-    () => [styles.mobileMenuLine, styles.mobileMenuLineShort, { backgroundColor: color }],
-    [color],
+    () => [
+      styles.mobileMenuLine,
+      styles.mobileMenuLineShort,
+      extraMuted ? styles.mobileMenuLineExtraMuted : styles.mobileMenuLineMuted,
+    ],
+    [extraMuted],
   );
   return (
     <View style={styles.mobileMenuIcon} pointerEvents="none">
@@ -56,7 +74,6 @@ function SidebarMenuToggleButton({
   extraMutedIdleIcon?: boolean;
   resolvedStyle: StyleProp<ViewStyle>;
 }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isOpen = usePanelStore((state) => selectIsAgentListOpen(state, { isCompact: isMobile }));
   const toggleAgentListForLayout = usePanelStore((state) => state.toggleAgentListForLayout);
@@ -86,18 +103,12 @@ function SidebarMenuToggleButton({
       accessibilityState={accessibilityState}
     >
       {isMobile ? (
-        <MobileMenuIcon
-          color={
-            extraMutedIdleIcon ? theme.colors.foregroundExtraMuted : theme.colors.foregroundMuted
-          }
-        />
+        <MobileMenuIcon extraMuted={extraMutedIdleIcon} />
       ) : (
-        <PanelLeft
+        <ThemedPanelLeft
           size={iconButtonChromeGlyphSize("large")}
           strokeWidth={1.5}
-          color={
-            extraMutedIdleIcon ? theme.colors.foregroundExtraMuted : theme.colors.foregroundMuted
-          }
+          uniProps={extraMutedIdleIcon ? menuExtraMutedMapping : menuMutedMapping}
         />
       )}
     </HeaderToggleButton>
@@ -182,7 +193,19 @@ const styles = StyleSheet.create((theme) => ({
     height: MOBILE_MENU_LINE_HEIGHT,
     borderRadius: theme.borderRadius.full,
   },
+  mobileMenuLineMuted: {
+    backgroundColor: theme.colors.foregroundMuted,
+  },
+  mobileMenuLineExtraMuted: {
+    backgroundColor: theme.colors.foregroundExtraMuted,
+  },
   mobileMenuLineShort: {
     width: MOBILE_MENU_LINE_SHORT_WIDTH,
+  },
+  menuIcon: {
+    color: theme.colors.foregroundMuted,
+  },
+  menuIconExtraMuted: {
+    color: theme.colors.foregroundExtraMuted,
   },
 }));

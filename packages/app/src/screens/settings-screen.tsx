@@ -12,9 +12,10 @@ import { EditingTextInput as TextInput } from "@/components/ui/text-input";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { Buffer } from "buffer";
 import {
   ArrowLeft,
@@ -201,6 +202,17 @@ const HOST_SECTION_ITEMS: HostSectionItem[] = [
   { id: "terminals", labelKey: "settings.hostSections.terminals", icon: SquareTerminal },
   { id: "plugins", labelKey: "settings.hostSections.plugins", icon: Blocks },
 ];
+
+const sidebarMutedMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const sidebarForegroundMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const ThemedChevronRight = withUnistyles(ChevronRight);
+const ThemedSidebarPlus = withUnistyles(Plus);
+const ThemedSidebarServer = withUnistyles(Server);
+
+function DetailHeaderIcon({ icon: IconComponent }: { icon: SidebarSectionItem["icon"] }) {
+  const ThemedIcon = useMemo(() => withUnistyles(IconComponent), [IconComponent]);
+  return <ThemedIcon size={ICON_SIZE.md} uniProps={sidebarMutedMapping} />;
+}
 
 function renderHostSettingsContent(
   view: Extract<SettingsView, { kind: "host" }>,
@@ -623,7 +635,6 @@ function AboutSection({ appVersion, appVersionText, isDesktopApp }: AboutSection
 
 function WhatsNewRow() {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
 
   return (
     <Pressable
@@ -638,9 +649,9 @@ function WhatsNewRow() {
             <Text style={settingsStyles.rowTitle}>{t("changelog.title")}</Text>
             <Text style={settingsStyles.rowHint}>{t("settings.about.whatsNewHint")}</Text>
           </View>
-          <ChevronRight
-            size={theme.iconSize.sm}
-            color={hovered ? theme.colors.foreground : theme.colors.foregroundMuted}
+          <ThemedChevronRight
+            size={ICON_SIZE.sm}
+            uniProps={hovered ? sidebarForegroundMapping : sidebarMutedMapping}
           />
         </>
       )}
@@ -901,15 +912,11 @@ function SidebarSectionButton({
   isSelected,
   onSelect,
 }: SidebarSectionButtonProps) {
-  const { theme } = useUnistyles();
+  const ThemedIcon = useMemo(() => withUnistyles(IconComponent), [IconComponent]);
   const handlePress = useCallback(() => {
     onSelect(itemId);
   }, [onSelect, itemId]);
   const accessibilityState = useMemo(() => ({ selected: isSelected }), [isSelected]);
-  const labelStyle = useMemo(
-    () => [sidebarStyles.label, isSelected && { color: theme.colors.foreground }],
-    [isSelected, theme.colors.foreground],
-  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -917,11 +924,14 @@ function SidebarSectionButton({
       onPress={handlePress}
       style={isSelected ? selectedSidebarItemStyle : sidebarItemStyle}
     >
-      <IconComponent
-        size={theme.iconSize.md}
-        color={isSelected ? theme.colors.foreground : theme.colors.foregroundMuted}
+      <ThemedIcon
+        size={ICON_SIZE.md}
+        uniProps={isSelected ? sidebarForegroundMapping : sidebarMutedMapping}
       />
-      <Text style={labelStyle} numberOfLines={1}>
+      <Text
+        style={[sidebarStyles.label, isSelected && sidebarStyles.labelSelected]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>
@@ -943,15 +953,11 @@ function SidebarHostSectionButton({
   isSelected,
   onSelect,
 }: SidebarHostSectionButtonProps) {
-  const { theme } = useUnistyles();
+  const ThemedIcon = useMemo(() => withUnistyles(IconComponent), [IconComponent]);
   const handlePress = useCallback(() => {
     onSelect(itemId);
   }, [onSelect, itemId]);
   const accessibilityState = useMemo(() => ({ selected: isSelected }), [isSelected]);
-  const labelStyle = useMemo(
-    () => [sidebarStyles.label, isSelected && { color: theme.colors.foreground }],
-    [isSelected, theme.colors.foreground],
-  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -960,11 +966,14 @@ function SidebarHostSectionButton({
       testID={`settings-host-section-${itemId}`}
       style={isSelected ? selectedSidebarItemStyle : sidebarItemStyle}
     >
-      <IconComponent
-        size={theme.iconSize.md}
-        color={isSelected ? theme.colors.foreground : theme.colors.foregroundMuted}
+      <ThemedIcon
+        size={ICON_SIZE.md}
+        uniProps={isSelected ? sidebarForegroundMapping : sidebarMutedMapping}
       />
-      <Text style={labelStyle} numberOfLines={1}>
+      <Text
+        style={[sidebarStyles.label, isSelected && sidebarStyles.labelSelected]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>
@@ -1074,7 +1083,6 @@ function SettingsSidebar({
   activeHostServerId,
   layout,
 }: SettingsSidebarProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const hosts = useHosts();
   const localServerId = useLocalDaemonServerId();
@@ -1147,7 +1155,7 @@ function SettingsSidebar({
             testID="settings-add-host"
             style={sidebarItemStyle}
           >
-            <Plus size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+            <ThemedSidebarPlus size={ICON_SIZE.md} uniProps={sidebarMutedMapping} />
             <Text style={sidebarStyles.label} numberOfLines={1}>
               {t("settings.addHost")}
             </Text>
@@ -1160,7 +1168,7 @@ function SettingsSidebar({
               testID="settings-enable-built-in-daemon"
               style={sidebarItemStyle}
             >
-              <Server size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+              <ThemedSidebarServer size={ICON_SIZE.md} uniProps={sidebarMutedMapping} />
               <Text style={sidebarStyles.label} numberOfLines={1}>
                 {t("settings.enableBuiltInDaemon")}
               </Text>
@@ -1216,7 +1224,6 @@ export interface SettingsScreenProps {
 
 export default function SettingsScreen({ view, openAddHostIntent = null }: SettingsScreenProps) {
   const router = useRouter();
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const voiceAudioEngine = useVoiceAudioEngineOptional();
   const { settings, isLoading: settingsLoading, updateSettings } = useAppSettings();
@@ -1583,7 +1590,7 @@ export default function SettingsScreen({ view, openAddHostIntent = null }: Setti
   const desktopDetailHeaderLeft = detailHeader ? (
     <>
       <HeaderIconBadge>
-        <detailHeader.Icon size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+        <DetailHeaderIcon icon={detailHeader.Icon} />
       </HeaderIconBadge>
       <ScreenTitle testID="settings-detail-header-title">{detailHeader.title}</ScreenTitle>
       {detailHeader.titleAccessory}
@@ -1781,6 +1788,12 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.foregroundMuted,
     fontSize: theme.fontSize.base,
   },
+  chevronIcon: {
+    color: theme.colors.foregroundMuted,
+  },
+  chevronIconHovered: {
+    color: theme.colors.foreground,
+  },
 }));
 
 const desktopStyles = StyleSheet.create((theme) => ({
@@ -1845,6 +1858,15 @@ const sidebarStyles = StyleSheet.create((theme) => ({
     color: theme.colors.foregroundMuted,
     fontWeight: theme.fontWeight.normal,
     flex: 1,
+  },
+  labelSelected: {
+    color: theme.colors.foreground,
+  },
+  icon: {
+    color: theme.colors.foregroundMuted,
+  },
+  iconSelected: {
+    color: theme.colors.foreground,
   },
   pickerTrigger: {
     flexDirection: "row",

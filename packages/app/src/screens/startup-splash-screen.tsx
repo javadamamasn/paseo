@@ -14,7 +14,8 @@ import * as Clipboard from "expo-clipboard";
 import { useTranslation } from "react-i18next";
 import { openExternalUrl } from "@/utils/open-external-url";
 import { BookOpen, Copy, RotateCw, TriangleAlert } from "lucide-react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import type { Theme } from "@/styles/theme";
 import { PaseoLogo } from "@/components/icons/paseo-logo";
 import { Button } from "@/components/ui/button";
 import { getDesktopDaemonLogs, type DesktopDaemonLogs } from "@/desktop/daemon/desktop-daemon";
@@ -80,13 +81,11 @@ function ensureWebSplashShimmerKeyframes() {
 }
 
 function LogoShimmer() {
-  const { theme } = useUnistyles();
-
   if (isWeb) {
-    return <WebLogoShimmer color={theme.colors.foreground} />;
+    return <ThemedWebLogoShimmer uniProps={shimmerForegroundMapping} />;
   }
 
-  return <NativeLogoShimmer color={theme.colors.foreground} />;
+  return <ThemedNativeLogoShimmer uniProps={shimmerForegroundMapping} />;
 }
 
 function WebLogoShimmer({ color }: { color: string }) {
@@ -178,6 +177,21 @@ function NativeLogoShimmer({ color }: { color: string }) {
     </MaskedView>
   );
 }
+
+const shimmerForegroundMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const ThemedWebLogoShimmer = withUnistyles(WebLogoShimmer);
+const ThemedNativeLogoShimmer = withUnistyles(NativeLogoShimmer);
+
+const foregroundIconMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const splashWhiteMapping = (theme: Theme) => ({ color: theme.colors.palette.white });
+const ThemedCopy = withUnistyles(Copy);
+const ThemedWarning = withUnistyles(TriangleAlert);
+const ThemedBook = withUnistyles(BookOpen);
+const ThemedRetry = withUnistyles(RotateCw);
+const copyIcon = <ThemedCopy size={16} uniProps={foregroundIconMapping} />;
+const warningIcon = <ThemedWarning size={16} uniProps={foregroundIconMapping} />;
+const bookIcon = <ThemedBook size={16} uniProps={foregroundIconMapping} />;
+const retryIcon = <ThemedRetry size={16} uniProps={splashWhiteMapping} />;
 
 const styles = StyleSheet.create((theme) => ({
   container: {
@@ -298,7 +312,6 @@ const styles = StyleSheet.create((theme) => ({
 
 export function StartupSplashScreen({ bootstrapState }: StartupSplashScreenProps) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const [daemonLogs, setDaemonLogs] = useState<DesktopDaemonLogs | null>(null);
   const [logsError, setLogsError] = useState<string | null>(null);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -363,23 +376,6 @@ export function StartupSplashScreen({ bootstrapState }: StartupSplashScreenProps
       : logsText;
     void Clipboard.setStringAsync(payload);
   }, [daemonLogs?.logPath, daemonLogs?.contents, logsText]);
-
-  const copyIcon = useMemo(
-    () => <Copy size={16} color={theme.colors.foreground} />,
-    [theme.colors.foreground],
-  );
-  const warningIcon = useMemo(
-    () => <TriangleAlert size={16} color={theme.colors.foreground} />,
-    [theme.colors.foreground],
-  );
-  const bookIcon = useMemo(
-    () => <BookOpen size={16} color={theme.colors.foreground} />,
-    [theme.colors.foreground],
-  );
-  const retryIcon = useMemo(
-    () => <RotateCw size={16} color={theme.colors.palette.white} />,
-    [theme.colors.palette.white],
-  );
 
   if (!isError) {
     return (

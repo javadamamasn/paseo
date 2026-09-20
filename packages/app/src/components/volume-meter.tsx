@@ -8,7 +8,7 @@ import ReanimatedAnimated, {
   withSequence,
   Easing,
 } from "react-native-reanimated";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 
 interface VolumeMeterProps {
   volume: number;
@@ -27,7 +27,6 @@ export function VolumeMeter({
   variant = "default",
   color,
 }: VolumeMeterProps) {
-  const { theme } = useUnistyles();
   const isCompact = variant === "compact";
 
   // Base dimensions
@@ -108,7 +107,6 @@ export function VolumeMeter({
     });
   }, [animatedVolume, isMuted, volume]);
 
-  const lineColor = color ?? theme.colors.foreground;
   let containerHeight: number;
   if (orientation === "horizontal") {
     containerHeight = isCompact ? 32 : 60;
@@ -167,20 +165,20 @@ export function VolumeMeter({
     [containerHeight],
   );
   const lineBase = useMemo(
-    () => ({ width: LINE_WIDTH, backgroundColor: lineColor }),
-    [LINE_WIDTH, lineColor],
+    () => ({ width: LINE_WIDTH, ...(color ? { backgroundColor: color } : {}) }),
+    [LINE_WIDTH, color],
   );
   const spacerStyle = useMemo(() => ({ width: LINE_SPACING }), [LINE_SPACING]);
   const line1CombinedStyle = useMemo(
-    () => [styles.line, lineBase, line1Style],
+    () => [styles.line, styles.lineDefault, lineBase, line1Style],
     [lineBase, line1Style],
   );
   const line2CombinedStyle = useMemo(
-    () => [styles.line, lineBase, line2Style],
+    () => [styles.line, styles.lineDefault, lineBase, line2Style],
     [lineBase, line2Style],
   );
   const line3CombinedStyle = useMemo(
-    () => [styles.line, lineBase, line3Style],
+    () => [styles.line, styles.lineDefault, lineBase, line3Style],
     [lineBase, line3Style],
   );
 
@@ -203,5 +201,8 @@ const styles = StyleSheet.create((theme) => ({
   },
   line: {
     borderRadius: theme.borderRadius.full,
+  },
+  lineDefault: {
+    backgroundColor: theme.colors.foreground,
   },
 }));

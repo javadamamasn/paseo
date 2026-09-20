@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Pressable, Text, View } from "react-native";
 import type { PressableStateCallbackType } from "react-native";
-import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { createNameId } from "mnemonic-id";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Folder, FolderPlus, GitBranch, GitPullRequest } from "lucide-react-native";
@@ -131,6 +131,9 @@ import { captureWorkspaceDraftCleanup } from "./new-workspace/background-handoff
 import { useNewWorkspaceScreenPresence } from "./new-workspace/screen-presence";
 
 const ThemedFolderPlus = withUnistyles(FolderPlus);
+const ThemedFolder = withUnistyles(Folder);
+const ThemedGitBranch = withUnistyles(GitBranch);
+const ThemedGitPullRequest = withUnistyles(GitPullRequest);
 const foregroundMutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
 const addProjectIcon = (
   <ThemedFolderPlus size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
@@ -222,21 +225,17 @@ const BADGE_HEIGHT = 28;
 function RefPickerBadgeContent({
   selectedItem,
   triggerLabel,
-  iconColor,
-  iconSize,
 }: {
   selectedItem: PickerItem | null;
   triggerLabel: string;
-  iconColor: string;
-  iconSize: number;
 }) {
   return (
     <>
       <View style={styles.badgeIconBox}>
         {selectedItem?.kind === "github-pr" ? (
-          <GitPullRequest size={iconSize} color={iconColor} />
+          <ThemedGitPullRequest size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         ) : (
-          <GitBranch size={iconSize} color={iconColor} />
+          <ThemedGitBranch size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         )}
       </View>
       <Text style={styles.badgeText} numberOfLines={1}>
@@ -255,8 +254,6 @@ function RefPickerTrigger({
   triggerLabel,
   accessibilityLabel,
   tooltipLabel,
-  iconColor,
-  iconSize,
 }: {
   pickerAnchorRef: React.RefObject<View | null>;
   onPress: () => void;
@@ -266,8 +263,6 @@ function RefPickerTrigger({
   triggerLabel: string;
   accessibilityLabel: string;
   tooltipLabel: string;
-  iconColor: string;
-  iconSize: number;
 }) {
   return (
     <Tooltip>
@@ -282,12 +277,7 @@ function RefPickerTrigger({
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
         >
-          <RefPickerBadgeContent
-            selectedItem={selectedItem}
-            triggerLabel={triggerLabel}
-            iconColor={iconColor}
-            iconSize={iconSize}
-          />
+          <RefPickerBadgeContent selectedItem={selectedItem} triggerLabel={triggerLabel} />
         </ComboboxTrigger>
       </TooltipTrigger>
       <TooltipContent side="top" align="center" offset={8}>
@@ -306,8 +296,6 @@ function ProjectPickerTrigger({
   tooltipLabel,
   projectViewKey,
   iconDataUri,
-  iconColor,
-  iconSize,
 }: {
   pickerAnchorRef: React.RefObject<View | null>;
   onPress: () => void;
@@ -317,8 +305,6 @@ function ProjectPickerTrigger({
   tooltipLabel: string;
   projectViewKey: string | null;
   iconDataUri: string | null;
-  iconColor: string;
-  iconSize: number;
 }) {
   const placeholderLabel = projectIconPlaceholderLabelFromDisplayName(label);
   const placeholderInitial = placeholderLabel.charAt(0).toUpperCase() || "?";
@@ -345,7 +331,7 @@ function ProjectPickerTrigger({
                 textStyle={styles.projectIconFallbackText}
               />
             ) : (
-              <Folder size={iconSize} color={iconColor} />
+              <ThemedFolder size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
             )}
           </View>
           <Text style={styles.badgeText} numberOfLines={1}>
@@ -371,8 +357,6 @@ function PickerOptionItem({
   isBranch,
   trailingLabel,
   accessibilityLabel,
-  iconColor,
-  iconSize,
 }: {
   testID: string;
   label: string;
@@ -384,20 +368,18 @@ function PickerOptionItem({
   isBranch: boolean;
   trailingLabel?: string;
   accessibilityLabel?: string;
-  iconColor: string;
-  iconSize: number;
 }) {
   const leadingSlot = useMemo(
     () => (
       <View style={styles.rowIconBox}>
         {isBranch ? (
-          <GitBranch size={iconSize} color={iconColor} />
+          <ThemedGitBranch size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         ) : (
-          <GitPullRequest size={iconSize} color={iconColor} />
+          <ThemedGitPullRequest size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         )}
       </View>
     ),
-    [isBranch, iconSize, iconColor],
+    [isBranch],
   );
   const trailingSlot = useMemo(
     () =>
@@ -427,8 +409,6 @@ function IsolationOptionItem({
   active,
   disabled,
   onPress,
-  iconColor,
-  iconSize,
 }: {
   optionId: string;
   label: string;
@@ -436,20 +416,18 @@ function IsolationOptionItem({
   active: boolean;
   disabled: boolean;
   onPress: () => void;
-  iconColor: string;
-  iconSize: number;
 }) {
   const leadingSlot = useMemo(
     () => (
       <View style={styles.rowIconBox}>
         {optionId === "worktree" ? (
-          <GitBranch size={iconSize} color={iconColor} />
+          <ThemedGitBranch size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         ) : (
-          <Folder size={iconSize} color={iconColor} />
+          <ThemedFolder size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
         )}
       </View>
     ),
-    [optionId, iconSize, iconColor],
+    [optionId],
   );
   return (
     <ComboboxItem
@@ -531,7 +509,6 @@ function NewWorkspacePickerOption({
   itemById: Map<string, PickerItem>;
   isPending: boolean;
 }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const item = itemById.get(option.id);
   if (!item) return <View key={option.id} />;
@@ -557,8 +534,6 @@ function NewWorkspacePickerOption({
       isBranch={isBranch}
       trailingLabel={isBranch ? item.divergenceLabel : undefined}
       accessibilityLabel={isBranch ? item.accessibilityLabel : undefined}
-      iconColor={theme.colors.foregroundMuted}
-      iconSize={theme.iconSize.sm}
     />
   );
 }
@@ -639,8 +614,6 @@ function IsolationPickerTrigger({
   isolation,
   label,
   tooltipLabel,
-  iconColor,
-  iconSize,
 }: {
   pickerAnchorRef: React.RefObject<View | null>;
   onPress: () => void;
@@ -649,8 +622,6 @@ function IsolationPickerTrigger({
   isolation: "local" | "worktree";
   label: string;
   tooltipLabel: string;
-  iconColor: string;
-  iconSize: number;
 }) {
   return (
     <Tooltip>
@@ -667,9 +638,9 @@ function IsolationPickerTrigger({
         >
           <View style={styles.badgeIconBox}>
             {isolation === "worktree" ? (
-              <GitBranch size={iconSize} color={iconColor} />
+              <ThemedGitBranch size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
             ) : (
-              <Folder size={iconSize} color={iconColor} />
+              <ThemedFolder size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
             )}
           </View>
           <Text style={styles.badgeText} numberOfLines={1}>
@@ -1421,7 +1392,6 @@ interface NewWorkspaceFormStackInput {
 }
 
 function useNewWorkspaceFormStack(input: NewWorkspaceFormStackInput): ReactElement {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const { isCompact, isPending, project, host, isolation, base, launch } = input;
 
@@ -1461,8 +1431,6 @@ function useNewWorkspaceFormStack(input: NewWorkspaceFormStackInput): ReactEleme
             ? (project.iconDataByProjectViewKey.get(project.selectedProject.viewKey) ?? null)
             : null
         }
-        iconColor={theme.colors.foregroundMuted}
-        iconSize={theme.iconSize.sm}
       />
       <Combobox
         options={project.options}
@@ -1536,8 +1504,6 @@ function useNewWorkspaceFormStack(input: NewWorkspaceFormStackInput): ReactEleme
         isolation={isolation.effectiveIsolation}
         label={isolationTriggerLabel}
         tooltipLabel={t("newWorkspace.tooltips.isolation")}
-        iconColor={theme.colors.foregroundMuted}
-        iconSize={theme.iconSize.sm}
       />
       <Combobox
         options={isolation.options}
@@ -1564,8 +1530,6 @@ function useNewWorkspaceFormStack(input: NewWorkspaceFormStackInput): ReactEleme
         triggerLabel={base.triggerLabel}
         accessibilityLabel={t("newWorkspace.refPicker.startingRef")}
         tooltipLabel={t("newWorkspace.tooltips.startingRef")}
-        iconColor={theme.colors.foregroundMuted}
-        iconSize={theme.iconSize.sm}
       />
       <Combobox
         options={base.options}
@@ -1631,7 +1595,6 @@ export function NewWorkspaceScreen({
   draftId,
 }: NewWorkspaceScreenProps) {
   const queryClient = useQueryClient();
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isCompact = useIsCompactFormFactor();
   const toast = useToast();
@@ -2010,12 +1973,10 @@ export function NewWorkspaceScreen({
           active={active}
           disabled={isPending}
           onPress={onPress}
-          iconColor={theme.colors.foregroundMuted}
-          iconSize={theme.iconSize.sm}
         />
       );
     },
-    [isPending, theme.colors.foregroundMuted, theme.iconSize.sm],
+    [isPending],
   );
 
   const handleClearDraft = useCallback(() => {

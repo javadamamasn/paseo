@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, Text, View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { Check, ChevronDown, ChevronRight, Eye, EyeOff, Link2 } from "lucide-react-native";
 import type { HostProfile } from "@/types/host-connection";
@@ -16,6 +17,18 @@ import { AdaptiveModalSheet, AdaptiveTextInput, type SheetHeader } from "./adapt
 import { Button } from "@/components/ui/button";
 
 const FLEX_ONE_STYLE = { flex: 1 } as const;
+
+const ThemedLink2 = withUnistyles(Link2);
+const ThemedCheck = withUnistyles(Check);
+const ThemedEye = withUnistyles(Eye);
+const ThemedEyeOff = withUnistyles(EyeOff);
+const ThemedChevronDown = withUnistyles(ChevronDown);
+const ThemedChevronRight = withUnistyles(ChevronRight);
+
+const mutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
+const accentForegroundMapping = (theme: Theme) => ({ color: theme.colors.accentForeground });
+
+const connectIcon = <ThemedLink2 size={ICON_SIZE.md} uniProps={accentForegroundMapping} />;
 
 interface DirectConnectionDraft {
   host: string;
@@ -290,7 +303,6 @@ export interface AddHostModalProps {
 }
 
 export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostModalProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const daemons = useHosts();
   const { probeAndUpsertDirectConnection } = useHostMutations();
@@ -318,10 +330,6 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
     bumpInputResetKey();
   }, []);
 
-  const connectIcon = useMemo(
-    () => <Link2 size={16} color={theme.colors.accentForeground} />,
-    [theme.colors.accentForeground],
-  );
   const hostFieldStyle = useMemo(() => [styles.field, styles.hostField], []);
   const portFieldStyle = useMemo(() => [styles.field, styles.portField], []);
   const checkboxStyle = useMemo(
@@ -481,8 +489,8 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
     setIsAdvancedOpen(false);
   }, [advancedUri, directConnectionLabels, host, isAdvancedOpen, password, port, useTls]);
 
-  const AdvancedIcon = isAdvancedOpen ? ChevronDown : ChevronRight;
-  const PasswordIcon = isPasswordVisible ? EyeOff : Eye;
+  const AdvancedIcon = isAdvancedOpen ? ThemedChevronDown : ThemedChevronRight;
+  const PasswordIcon = isPasswordVisible ? ThemedEyeOff : ThemedEye;
 
   return (
     <AdaptiveModalSheet
@@ -504,7 +512,6 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
             resetKey={`direct-host-${inputResetKey}`}
             onChangeText={setHost}
             placeholder="localhost"
-            placeholderTextColor={theme.colors.foregroundMuted}
             style={styles.input}
             autoCapitalize="none"
             autoCorrect={false}
@@ -523,7 +530,6 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
             resetKey={`direct-port-${inputResetKey}`}
             onChangeText={setPort}
             placeholder="6767"
-            placeholderTextColor={theme.colors.foregroundMuted}
             style={styles.input}
             autoCapitalize="none"
             autoCorrect={false}
@@ -547,7 +553,7 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
         <View style={checkboxStyle}>
           {useTls ? (
             <View testID="direct-ssl-toggle-checked">
-              <Check size={14} color={theme.colors.accentForeground} />
+              <ThemedCheck size={ICON_SIZE.sm} uniProps={accentForegroundMapping} />
             </View>
           ) : null}
         </View>
@@ -565,7 +571,6 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
             resetKey={`direct-password-${inputResetKey}`}
             onChangeText={setPassword}
             placeholder={t("pairing.direct.fields.optional")}
-            placeholderTextColor={theme.colors.foregroundMuted}
             style={passwordInputStyle}
             autoCapitalize="none"
             autoCorrect={false}
@@ -586,7 +591,7 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
             }
             testID="direct-password-visibility-toggle"
           >
-            <PasswordIcon size={18} color={theme.colors.foregroundMuted} />
+            <PasswordIcon size={18} uniProps={mutedColorMapping} />
           </Pressable>
         </View>
       </View>
@@ -602,7 +607,7 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
           }
           testID="direct-host-advanced-toggle"
         >
-          <AdvancedIcon size={16} color={theme.colors.foregroundMuted} />
+          <AdvancedIcon size={ICON_SIZE.md} uniProps={mutedColorMapping} />
           <Text style={styles.advancedText}>{t("pairing.direct.advanced.label")}</Text>
         </Pressable>
         {isAdvancedOpen ? (
@@ -614,7 +619,6 @@ export function AddHostModal({ visible, onClose, onCancel, onSaved }: AddHostMod
             resetKey={`direct-host-uri-${inputResetKey}`}
             onChangeText={setAdvancedUri}
             placeholder="tcp://localhost:6767?ssl=true"
-            placeholderTextColor={theme.colors.foregroundMuted}
             style={styles.input}
             autoCapitalize="none"
             autoCorrect={false}
