@@ -10,14 +10,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCallback, useMemo, useState, type ReactElement } from "react";
-import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { formatTimeAgo } from "@/utils/time";
 import { type AggregatedAgent } from "@/hooks/use-aggregated-agents";
 import { useSessionStore } from "@/stores/session-store";
-import { ICON_SIZE, type Theme } from "@/styles/theme";
+import { ICON_SIZE, SPACING, type Theme } from "@/styles/theme";
 import { Archive, ChevronRight } from "lucide-react-native";
 import { getProviderIcon } from "@/components/provider-icons";
 import { navigateToAgent } from "@/utils/navigate-to-agent";
@@ -51,9 +51,14 @@ const DATE_SECTION_ORDER = [
 
 const ThemedArchive = withUnistyles(Archive);
 const ThemedChevronRight = withUnistyles(ChevronRight);
+const ThemedRefreshControl = withUnistyles(RefreshControl);
 
 const foregroundMutedColorMapping = (theme: Theme) => ({
   color: theme.colors.foregroundMuted,
+});
+const refreshControlMapping = (theme: Theme) => ({
+  tintColor: theme.colors.foregroundMuted,
+  colors: [theme.colors.foregroundMuted],
 });
 // Archive size follows the interface-size setting, so it rides along in uniProps;
 // iconSize tokens are static (ICON_SIZE) and stay plain props.
@@ -352,7 +357,6 @@ export function AgentList({
   showHostColumn = false,
   search,
 }: AgentListProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [actionAgent, setActionAgent] = useState<AggregatedAgent | null>(null);
@@ -476,13 +480,9 @@ export function AgentList({
 
   const keyExtractor = useCallback((item: FlatListItem) => item.key, []);
 
-  const refreshColors = useMemo(
-    () => [theme.colors.foregroundMuted],
-    [theme.colors.foregroundMuted],
-  );
   const sheetContainerStyle = useMemo(
-    () => [styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, theme.spacing[6]) }],
-    [insets.bottom, theme.spacing],
+    () => [styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, SPACING[6]) }],
+    [insets.bottom],
   );
   const sheetArchiveTextStyle = useMemo(
     () => [styles.sheetArchiveText, isActionDaemonUnavailable && styles.sheetArchiveTextDisabled],
@@ -492,14 +492,13 @@ export function AgentList({
   const refreshControl = useMemo(
     () =>
       onRefresh ? (
-        <RefreshControl
+        <ThemedRefreshControl
           refreshing={isRefreshing}
           onRefresh={onRefresh}
-          tintColor={theme.colors.foregroundMuted}
-          colors={refreshColors}
+          uniProps={refreshControlMapping}
         />
       ) : undefined,
-    [onRefresh, isRefreshing, theme.colors.foregroundMuted, refreshColors],
+    [onRefresh, isRefreshing],
   );
 
   return (

@@ -2,9 +2,10 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { Mic, MicOff, Square } from "lucide-react-native";
 import { FOOTER_HEIGHT } from "@/constants/layout";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { useVoiceTelemetry } from "@/contexts/voice-context";
 import { VolumeMeter } from "./volume-meter";
 
@@ -18,13 +19,24 @@ interface RealtimeVoiceOverlayProps {
 const OVERLAY_BUTTON_SIZE = 44;
 const OVERLAY_VERTICAL_PADDING = (FOOTER_HEIGHT - OVERLAY_BUTTON_SIZE) / 2;
 
+const ThemedMic = withUnistyles(Mic);
+const ThemedMicOff = withUnistyles(MicOff);
+const ThemedSquare = withUnistyles(Square);
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+
+const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const whiteColorMapping = (theme: Theme) => ({ color: theme.colors.palette.white });
+const whiteSquareMapping = (theme: Theme) => ({
+  color: theme.colors.palette.white,
+  fill: theme.colors.palette.white,
+});
+
 export function RealtimeVoiceOverlay({
   isMuted,
   isSwitching,
   onToggleMute,
   onStop,
 }: RealtimeVoiceOverlayProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const { volume, isSpeaking } = useVoiceTelemetry();
   const muteButtonStyle = useMemo(
@@ -62,9 +74,9 @@ export function RealtimeVoiceOverlay({
           style={muteButtonStyle}
         >
           {isMuted ? (
-            <MicOff size={theme.iconSize.lg} color={theme.colors.palette.white} strokeWidth={2.5} />
+            <ThemedMicOff size={ICON_SIZE.lg} uniProps={whiteColorMapping} strokeWidth={2.5} />
           ) : (
-            <Mic size={theme.iconSize.lg} color={theme.colors.foreground} strokeWidth={2.5} />
+            <ThemedMic size={ICON_SIZE.lg} uniProps={foregroundColorMapping} strokeWidth={2.5} />
           )}
         </Pressable>
 
@@ -76,14 +88,9 @@ export function RealtimeVoiceOverlay({
           style={stopButtonStyle}
         >
           {isSwitching ? (
-            <LoadingSpinner size="small" color={theme.colors.palette.white} />
+            <ThemedLoadingSpinner size="small" uniProps={whiteColorMapping} />
           ) : (
-            <Square
-              size={theme.iconSize.lg}
-              color={theme.colors.palette.white}
-              fill={theme.colors.palette.white}
-              strokeWidth={2.5}
-            />
+            <ThemedSquare size={ICON_SIZE.lg} uniProps={whiteSquareMapping} strokeWidth={2.5} />
           )}
         </Pressable>
       </View>

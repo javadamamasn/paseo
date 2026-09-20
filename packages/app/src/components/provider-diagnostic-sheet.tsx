@@ -4,7 +4,7 @@ import type { TFunction } from "i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, type PressableStateCallbackType, Text, View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import {
   AdaptiveModalSheet,
   AdaptiveTextInput,
@@ -30,6 +30,20 @@ import {
   resolveProviderDiscoveredModels,
   type ProviderDiscoveredModelsCache,
 } from "./provider-diagnostic-models";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
+
+const ThemedTrash2 = withUnistyles(Trash2);
+const ThemedCopy = withUnistyles(Copy);
+const ThemedRotateCw = withUnistyles(RotateCw);
+const ThemedAlertTriangle = withUnistyles(AlertTriangle);
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
+const destructiveColorMapping = (theme: Theme) => ({
+  color: theme.colors.destructive,
+});
 
 interface ProviderDiagnosticSheetProps {
   provider: string;
@@ -82,7 +96,6 @@ function CustomModelRow({
   onDelete: (modelId: string) => void;
 }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const handleDelete = useCallback(() => onDelete(model.id), [model.id, onDelete]);
   const deleteButtonStyle = useCallback(
     ({ hovered, pressed }: PressableStateCallbackType & { hovered?: boolean }) => [
@@ -115,7 +128,7 @@ function CustomModelRow({
         accessibilityRole="button"
         accessibilityLabel={t("settings.providers.models.removeModel", { id: model.id })}
       >
-        <Trash2 size={theme.iconSize.sm} color={theme.colors.destructive} />
+        <ThemedTrash2 size={ICON_SIZE.sm} uniProps={destructiveColorMapping} />
       </Pressable>
     </View>
   );
@@ -152,7 +165,6 @@ function AddCustomModelSubSheet({
   refresh: (providers?: AgentProvider[]) => Promise<void>;
 }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const { config, patchConfig } = useDaemonConfig(serverId);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -213,7 +225,6 @@ function AddCustomModelSubSheet({
           onChangeText={setInput}
           onSubmitEditing={handleAdd}
           placeholder={t("settings.providers.models.modelIdPlaceholder")}
-          placeholderTextColor={theme.colors.foregroundMuted}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="done"
@@ -246,7 +257,6 @@ function DiagnosticSubSheet({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const toast = useToast();
   const client = useHostRuntimeClient(serverId);
   const [diagnostic, setDiagnostic] = useState<string | null>(null);
@@ -317,7 +327,7 @@ function DiagnosticSubSheet({
             accessibilityRole="button"
             accessibilityLabel={t("settings.providers.diagnostic.copyAccessibility")}
           >
-            <Copy size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+            <ThemedCopy size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
           </Pressable>
           <Pressable
             onPress={handleRefreshPress}
@@ -332,9 +342,9 @@ function DiagnosticSubSheet({
             }
           >
             {loading ? (
-              <LoadingSpinner size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+              <ThemedLoadingSpinner size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
             ) : (
-              <RotateCw size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+              <ThemedRotateCw size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
             )}
           </Pressable>
         </View>
@@ -348,8 +358,6 @@ function DiagnosticSubSheet({
       loading,
       refreshButtonStyle,
       t,
-      theme.colors.foregroundMuted,
-      theme.iconSize.sm,
     ],
   );
 
@@ -358,7 +366,7 @@ function DiagnosticSubSheet({
     body = (
       <SurfaceCard key={visible ? "visible" : "hidden"}>
         <View style={sheetStyles.codeBlockLoading}>
-          <LoadingSpinner size="small" color={theme.colors.foregroundMuted} />
+          <ThemedLoadingSpinner size="small" uniProps={foregroundMutedColorMapping} />
           <Text style={sheetStyles.mutedText}>{t("settings.providers.diagnostic.running")}</Text>
         </View>
       </SurfaceCard>
@@ -405,7 +413,6 @@ interface ProviderModalBodyProps {
   deletingModelId: string | null;
   onRefresh: () => void;
   onDeleteCustom: (modelId: string) => void;
-  theme: { iconSize: { md: number }; colors: { foregroundMuted: string } };
 }
 
 interface ProviderSheetFooterInput {
@@ -491,13 +498,12 @@ function ProviderModalBody(props: ProviderModalBodyProps) {
     deletingModelId,
     onRefresh,
     onDeleteCustom,
-    theme,
   } = props;
 
   if (discoveredCount === 0 && additionalCount === 0 && providerSnapshotRefreshing) {
     return (
       <View style={sheetStyles.emptyState}>
-        <LoadingSpinner size="small" color={theme.colors.foregroundMuted} />
+        <ThemedLoadingSpinner size="small" uniProps={foregroundMutedColorMapping} />
         <Text style={sheetStyles.mutedText}>{t("settings.providers.models.loading")}</Text>
       </View>
     );
@@ -505,7 +511,7 @@ function ProviderModalBody(props: ProviderModalBodyProps) {
   if (discoveredCount === 0 && additionalCount === 0 && providerErrorMessage) {
     return (
       <View style={sheetStyles.emptyState}>
-        <AlertTriangle size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+        <ThemedAlertTriangle size={ICON_SIZE.md} uniProps={foregroundMutedColorMapping} />
         <Text style={sheetStyles.mutedText}>{providerErrorMessage}</Text>
         <Button variant="default" size="sm" onPress={onRefresh} disabled={modelsRefreshing}>
           {modelsRefreshing
@@ -573,7 +579,6 @@ export function ProviderDiagnosticSheet({
   serverId,
 }: ProviderDiagnosticSheetProps) {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const isCompact = useIsCompactFormFactor();
   const { entries: snapshotEntries, refresh, isRefreshing } = useProvidersSnapshot(serverId);
   const { config, patchConfig } = useDaemonConfig(serverId);
@@ -708,7 +713,6 @@ export function ProviderDiagnosticSheet({
           deletingModelId={deletingModelId}
           onRefresh={handleRefreshModels}
           onDeleteCustom={handleDeleteCustom}
-          theme={theme}
         />
       </AdaptiveModalSheet>
       <AddCustomModelSubSheet

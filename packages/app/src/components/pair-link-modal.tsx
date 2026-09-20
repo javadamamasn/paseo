@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Text, View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { Link } from "lucide-react-native";
 import type { HostProfile } from "@/types/host-connection";
@@ -12,8 +12,15 @@ import { ConnectionOfferSchema } from "@getpaseo/protocol/connection-offer";
 import { AdaptiveModalSheet, AdaptiveTextInput, type SheetHeader } from "./adaptive-modal-sheet";
 import { Button } from "@/components/ui/button";
 import type { EditingTextInputHandle } from "@/components/ui/text-input";
+import type { Theme } from "@/styles/theme";
 
 const FLEX_ONE_STYLE = { flex: 1 } as const;
+
+const ThemedLink = withUnistyles(Link);
+
+const accentForegroundColorMapping = (theme: Theme) => ({
+  color: theme.colors.accentForeground,
+});
 
 const styles = StyleSheet.create((theme) => ({
   helper: {
@@ -61,7 +68,6 @@ export interface PairLinkModalProps {
 }
 
 export function PairLinkModal({ visible, onClose, onCancel, onSaved }: PairLinkModalProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const daemons = useHosts();
   const { upsertConnectionFromOfferUrl: upsertDaemonFromOfferUrl } = useHostMutations();
@@ -78,8 +84,8 @@ export function PairLinkModal({ visible, onClose, onCancel, onSaved }: PairLinkM
   }, []);
 
   const pairIcon = useMemo(
-    () => <Link size={16} color={theme.colors.accentForeground} />,
-    [theme.colors.accentForeground],
+    () => <ThemedLink size={16} uniProps={accentForegroundColorMapping} />,
+    [],
   );
 
   const handleClose = useCallback(() => {
@@ -191,7 +197,6 @@ export function PairLinkModal({ visible, onClose, onCancel, onSaved }: PairLinkM
           accessibilityLabel={t("pairing.link.label")}
           onChangeText={handleChangeOfferUrl}
           placeholder="https://app.paseo.sh/#offer=..."
-          placeholderTextColor={theme.colors.foregroundMuted}
           style={styles.input}
           autoFocus
           autoCapitalize="none"

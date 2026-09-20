@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import { useTranslation } from "react-i18next";
 import { Pressable, Text, View, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import {
   QrCode,
   Link2,
@@ -25,6 +25,7 @@ import { PaseoLogo } from "@/components/icons/paseo-logo";
 import { openExternalUrl } from "@/utils/open-external-url";
 import { isFdroidBuild } from "@/constants/build-profile";
 import { isWeb, isNative } from "@/constants/platform";
+import { ICON_SIZE, SPACING, type Theme } from "@/styles/theme";
 import { isElectronRuntime } from "@/desktop/host";
 
 interface WelcomeAction {
@@ -35,6 +36,11 @@ interface WelcomeAction {
   icon: typeof QrCode;
   onPress: () => void;
 }
+
+const ThemedWelcomeExternalLink = withUnistyles(ExternalLink);
+const accentColorMapping = (theme: Theme) => ({ color: theme.colors.accent });
+const accentForegroundColorMapping = (theme: Theme) => ({ color: theme.colors.accentForeground });
+const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
 
 const styles = StyleSheet.create((theme) => ({
   root: {
@@ -167,7 +173,6 @@ export interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ onHostAdded }: WelcomeScreenProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -273,8 +278,8 @@ export function WelcomeScreen({ onHostAdded }: WelcomeScreenProps) {
   }
 
   const scrollContentContainerStyle = useMemo(
-    () => [styles.container, { paddingBottom: theme.spacing[6] + insets.bottom }],
-    [theme.spacing, insets.bottom],
+    () => [styles.container, { paddingBottom: SPACING[6] + insets.bottom }],
+    [insets.bottom],
   );
 
   return (
@@ -293,7 +298,7 @@ export function WelcomeScreen({ onHostAdded }: WelcomeScreenProps) {
             {isNative ? (
               <Pressable style={styles.setupLink} onPress={handleOpenPaseoSite}>
                 <Text style={styles.setupLinkText}>paseo.sh</Text>
-                <ExternalLink size={14} color={theme.colors.accent} />
+                <ThemedWelcomeExternalLink size={ICON_SIZE.sm} uniProps={accentColorMapping} />
               </Pressable>
             ) : null}
           </View>
@@ -344,8 +349,8 @@ interface WelcomeActionButtonProps {
 }
 
 function WelcomeActionButton({ action }: WelcomeActionButtonProps) {
-  const { theme } = useUnistyles();
   const Icon = action.icon;
+  const ThemedIcon = useMemo(() => withUnistyles(Icon), [Icon]);
   const buttonStyle = useMemo(
     () => [styles.actionButton, action.primary ? styles.actionButtonPrimary : null],
     [action.primary],
@@ -356,9 +361,9 @@ function WelcomeActionButton({ action }: WelcomeActionButtonProps) {
   );
   return (
     <Pressable style={buttonStyle} onPress={action.onPress} testID={action.testID}>
-      <Icon
+      <ThemedIcon
         size={18}
-        color={action.primary ? theme.colors.accentForeground : theme.colors.foreground}
+        uniProps={action.primary ? accentForegroundColorMapping : foregroundColorMapping}
       />
       <Text style={textStyle}>{action.label}</Text>
     </Pressable>

@@ -1,7 +1,8 @@
-import { AlertTriangle, CheckCircle2, Info, XCircle, type LucideIcon } from "lucide-react-native";
+import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react-native";
 import { type ReactNode, useMemo } from "react";
 import { Text, View } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 
 export type AlertVariant = "default" | "info" | "success" | "warning" | "error";
 
@@ -14,11 +15,28 @@ export interface AlertProps {
   testID?: string;
 }
 
-const VARIANT_ICON: Record<Exclude<AlertVariant, "default">, LucideIcon> = {
-  info: Info,
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  error: XCircle,
+const ThemedAlertInfo = withUnistyles(Info);
+const ThemedAlertSuccess = withUnistyles(CheckCircle2);
+const ThemedAlertWarning = withUnistyles(AlertTriangle);
+const ThemedAlertError = withUnistyles(XCircle);
+
+const VARIANT_ICON = {
+  info: ThemedAlertInfo,
+  success: ThemedAlertSuccess,
+  warning: ThemedAlertWarning,
+  error: ThemedAlertError,
+};
+
+const infoColorMapping = (theme: Theme) => ({ color: theme.colors.palette.blue[300] });
+const successColorMapping = (theme: Theme) => ({ color: theme.colors.statusSuccess });
+const warningColorMapping = (theme: Theme) => ({ color: theme.colors.palette.amber[500] });
+const errorColorMapping = (theme: Theme) => ({ color: theme.colors.destructive });
+
+const VARIANT_ICON_COLOR_MAPPING = {
+  info: infoColorMapping,
+  success: successColorMapping,
+  warning: warningColorMapping,
+  error: errorColorMapping,
 };
 
 export function Alert({
@@ -29,26 +47,40 @@ export function Alert({
   children,
   testID,
 }: AlertProps) {
-  const { theme } = useUnistyles();
-  const accentColor = resolveAccentColor(variant, theme);
-  const borderColor = variant === "success" ? theme.colors.border : accentColor;
+  const containerStyle = useMemo(() => {
+    switch (variant) {
+      case "info":
+        return [styles.container, styles.containerInfo];
+      case "warning":
+        return [styles.container, styles.containerWarning];
+      case "error":
+        return [styles.container, styles.containerError];
+      default:
+        return [styles.container];
+    }
+  }, [variant]);
 
-  const containerStyle = useMemo(
-    () => [styles.container, borderColor ? { borderColor } : null],
-    [borderColor],
-  );
-
-  const titleStyle = useMemo(
-    () => [styles.title, accentColor ? { color: accentColor } : null],
-    [accentColor],
-  );
+  const titleStyle = useMemo(() => {
+    switch (variant) {
+      case "info":
+        return [styles.title, styles.titleInfo];
+      case "success":
+        return [styles.title, styles.titleSuccess];
+      case "warning":
+        return [styles.title, styles.titleWarning];
+      case "error":
+        return [styles.title, styles.titleError];
+      default:
+        return [styles.title];
+    }
+  }, [variant]);
 
   const resolvedIcon = useMemo(() => {
     if (icon !== undefined) return icon;
     if (variant === "default") return null;
-    const Icon = VARIANT_ICON[variant];
-    return <Icon size={theme.iconSize.sm} color={accentColor ?? theme.colors.foreground} />;
-  }, [icon, variant, theme, accentColor]);
+    const ThemedIcon = VARIANT_ICON[variant];
+    return <ThemedIcon size={ICON_SIZE.sm} uniProps={VARIANT_ICON_COLOR_MAPPING[variant]} />;
+  }, [icon, variant]);
 
   const hasDescription = description != null && description !== "";
 
@@ -69,17 +101,6 @@ export function Alert({
   );
 }
 
-function resolveAccentColor(
-  variant: AlertVariant,
-  theme: ReturnType<typeof useUnistyles>["theme"],
-): string | null {
-  if (variant === "info") return theme.colors.palette.blue[300];
-  if (variant === "success") return theme.colors.statusSuccess;
-  if (variant === "warning") return theme.colors.palette.amber[500];
-  if (variant === "error") return theme.colors.destructive;
-  return null;
-}
-
 const styles = StyleSheet.create((theme) => ({
   container: {
     flexDirection: "row",
@@ -91,6 +112,15 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.borderRadius.xl,
     paddingVertical: theme.spacing[3],
     paddingHorizontal: theme.spacing[4],
+  },
+  containerInfo: {
+    borderColor: theme.colors.palette.blue[300],
+  },
+  containerWarning: {
+    borderColor: theme.colors.palette.amber[500],
+  },
+  containerError: {
+    borderColor: theme.colors.destructive,
   },
   iconSlot: {
     paddingTop: 2,
@@ -104,6 +134,18 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.foreground,
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.medium,
+  },
+  titleInfo: {
+    color: theme.colors.palette.blue[300],
+  },
+  titleSuccess: {
+    color: theme.colors.statusSuccess,
+  },
+  titleWarning: {
+    color: theme.colors.palette.amber[500],
+  },
+  titleError: {
+    color: theme.colors.destructive,
   },
   description: {
     color: theme.colors.foregroundMuted,

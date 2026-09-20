@@ -1,7 +1,7 @@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useState, useCallback, useMemo } from "react";
 import { View, Text, Pressable, type PressableStateCallbackType } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { Check, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import type { PendingPermission } from "@/types/shared";
 import type { AgentPermissionResponse } from "@getpaseo/protocol/agent-types";
 import { isWeb } from "@/constants/platform";
 import { EditingTextInput as TextInput } from "@/components/ui/text-input";
+import type { Theme } from "@/styles/theme";
 import {
   areQuestionsAnswered,
   buildQuestionFormAnswers,
@@ -28,6 +29,21 @@ interface QuestionFormCardProps {
 }
 
 const IS_WEB = isWeb;
+
+const ThemedCheck = withUnistyles(Check);
+const ThemedX = withUnistyles(X);
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+const ThemedOtherInput = withUnistyles(TextInput, (theme: Theme) => ({
+  placeholderTextColor: theme.colors.foregroundMuted,
+}));
+
+const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
+const accentForegroundColorMapping = (theme: Theme) => ({
+  color: theme.colors.accentForeground,
+});
 
 function getQuestionInputPlaceholder({
   question,
@@ -62,8 +78,6 @@ function QuestionOptionRow({
   isResponding,
   onToggle,
 }: QuestionOptionRowProps) {
-  const { theme } = useUnistyles();
-
   const handlePress = useCallback(() => {
     onToggle(qIndex, optIndex, multiSelect);
   }, [onToggle, qIndex, optIndex, multiSelect]);
@@ -71,24 +85,15 @@ function QuestionOptionRow({
   const pressableStyle = useCallback(
     ({ pressed, hovered }: PressableStateCallbackType & { hovered?: boolean }) => [
       styles.optionItem,
-      (Boolean(hovered) || isSelected) && {
-        backgroundColor: theme.colors.surface2,
-      },
+      (Boolean(hovered) || isSelected) && styles.optionItemHighlighted,
       pressed && styles.optionItemPressed,
     ],
-    [isSelected, theme.colors.surface2],
+    [isSelected],
   );
 
   const optionLabelStyle = useMemo(
-    () => [
-      styles.optionLabel,
-      { color: isSelected ? theme.colors.foreground : theme.colors.foregroundMuted },
-    ],
-    [isSelected, theme.colors.foreground, theme.colors.foregroundMuted],
-  );
-  const optionDescriptionStyle = useMemo(
-    () => [styles.optionDescription, { color: theme.colors.foregroundMuted }],
-    [theme.colors.foregroundMuted],
+    () => [styles.optionLabel, isSelected ? styles.optionLabelSelected : styles.optionLabelMuted],
+    [isSelected],
   );
   const accessibilityState = useMemo(() => ({ checked: isSelected }), [isSelected]);
 
@@ -98,16 +103,10 @@ function QuestionOptionRow({
     () => [
       styles.selectionControl,
       multiSelect ? styles.selectionControlCheckbox : styles.selectionControlRadio,
-      {
-        borderColor: isSelected ? theme.colors.accent : theme.colors.foregroundExtraMuted,
-        backgroundColor: isSelected && multiSelect ? theme.colors.accent : "transparent",
-      },
+      isSelected ? styles.selectionControlSelected : styles.selectionControlUnselected,
+      isSelected && multiSelect ? styles.selectionControlFilled : null,
     ],
-    [isSelected, multiSelect, theme.colors.accent, theme.colors.foregroundExtraMuted],
-  );
-  const radioDotStyle = useMemo(
-    () => [styles.selectionRadioDot, { backgroundColor: theme.colors.accent }],
-    [theme.colors.accent],
+    [isSelected, multiSelect],
   );
 
   return (
@@ -123,14 +122,14 @@ function QuestionOptionRow({
       <View style={styles.optionItemContent}>
         <View style={controlStyle}>
           {isSelected && multiSelect ? (
-            <Check size={12} color={theme.colors.accentForeground} />
+            <ThemedCheck size={12} uniProps={accentForegroundColorMapping} />
           ) : null}
-          {isSelected && !multiSelect ? <View style={radioDotStyle} /> : null}
+          {isSelected && !multiSelect ? <View style={styles.selectionRadioDot} /> : null}
         </View>
         <View style={styles.optionTextBlock}>
           <Text style={optionLabelStyle}>{option.label}</Text>
           {option.description ? (
-            <Text style={optionDescriptionStyle}>{option.description}</Text>
+            <Text style={styles.optionDescription}>{option.description}</Text>
           ) : null}
         </View>
       </View>
@@ -157,7 +156,6 @@ function QuestionNavButton({
   isResponding,
   onSelect,
 }: QuestionNavButtonProps) {
-  const { theme } = useUnistyles();
   const accessibilityState = useMemo(() => ({ selected: isActive }), [isActive]);
   const handlePress = useCallback(() => {
     onSelect(index);
@@ -166,28 +164,19 @@ function QuestionNavButton({
     ({ pressed, hovered }: PressableStateCallbackType & { hovered?: boolean }) => {
       return [
         styles.questionNavButton,
-        {
-          backgroundColor:
-            isActive || Boolean(hovered) ? theme.colors.surface2 : theme.colors.surface1,
-          borderColor: isActive ? theme.colors.foregroundMuted : theme.colors.border,
-        },
+        isActive ? styles.questionNavButtonActive : styles.questionNavButtonInactive,
+        Boolean(hovered) && !isActive ? styles.questionNavButtonHovered : null,
         pressed && styles.optionItemPressed,
       ];
     },
-    [
-      isActive,
-      theme.colors.border,
-      theme.colors.foregroundMuted,
-      theme.colors.surface1,
-      theme.colors.surface2,
-    ],
+    [isActive],
   );
   const textStyle = useMemo(
     () => [
       styles.questionNavText,
-      { color: isActive ? theme.colors.foreground : theme.colors.foregroundMuted },
+      isActive ? styles.questionNavTextActive : styles.questionNavTextMuted,
     ],
-    [isActive, theme.colors.foreground, theme.colors.foregroundMuted],
+    [isActive],
   );
 
   return (
@@ -202,9 +191,9 @@ function QuestionNavButton({
       disabled={isResponding}
     >
       {isAnswered ? (
-        <Check
+        <ThemedCheck
           size={12}
-          color={isActive ? theme.colors.foreground : theme.colors.foregroundMuted}
+          uniProps={isActive ? foregroundColorMapping : foregroundMutedColorMapping}
         />
       ) : null}
       <Text style={textStyle} numberOfLines={1}>
@@ -275,7 +264,6 @@ function QuestionOtherInput({
   onChange,
   onSubmit,
 }: QuestionOtherInputProps) {
-  const { theme } = useUnistyles();
   const handleChange = useCallback(
     (text: string) => {
       onChange(qIndex, text);
@@ -286,28 +274,17 @@ function QuestionOtherInput({
     () =>
       [
         styles.otherInput,
-        {
-          borderColor: value.length > 0 ? theme.colors.borderAccent : theme.colors.border,
-          color: theme.colors.foreground,
-          backgroundColor: theme.colors.surface2,
-        },
+        value.length > 0 ? styles.otherInputFilled : styles.otherInputEmpty,
         IS_WEB ? { outlineStyle: "none", outlineWidth: 0, outlineColor: "transparent" } : null,
       ] as const,
-    [
-      value.length,
-      theme.colors.borderAccent,
-      theme.colors.border,
-      theme.colors.foreground,
-      theme.colors.surface2,
-    ],
+    [value.length],
   );
   return (
-    <TextInput
+    <ThemedOtherInput
       // @ts-expect-error - outlineStyle is web-only
       style={otherInputStyle}
       accessibilityLabel={accessibilityLabel}
       placeholder={placeholder}
-      placeholderTextColor={theme.colors.foregroundMuted}
       initialValue={value}
       onChangeText={handleChange}
       onSubmitEditing={onSubmit}
@@ -318,7 +295,6 @@ function QuestionOtherInput({
 }
 
 export function QuestionFormCard({ permission, onRespond, isResponding }: QuestionFormCardProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isMobile = useIsCompactFormFactor();
   const questions = useMemo(
@@ -444,13 +420,11 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
   const dismissButtonStyle = useCallback(
     ({ pressed, hovered }: PressableStateCallbackType & { hovered?: boolean }) => [
       styles.actionButton,
-      {
-        backgroundColor: hovered ? theme.colors.surface2 : theme.colors.surface1,
-        borderColor: theme.colors.borderAccent,
-      },
+      styles.actionButtonDismiss,
+      Boolean(hovered) && styles.actionButtonDismissHovered,
       pressed && styles.optionItemPressed,
     ],
-    [theme.colors.surface2, theme.colors.surface1, theme.colors.borderAccent],
+    [],
   );
 
   const primaryDisabled = isResponding || (isLastQuestion ? !allAnswered : !activeQuestionAnswered);
@@ -460,30 +434,13 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
   const submitButtonStyle = useCallback(
     ({ pressed }: PressableStateCallbackType & { hovered?: boolean }) => [
       styles.actionButton,
-      {
-        backgroundColor: theme.colors.accent,
-        borderColor: theme.colors.accent,
-        opacity: primaryDisabled ? 0.5 : 1,
-      },
+      styles.actionButtonSubmit,
+      primaryDisabled && styles.actionButtonSubmitDisabled,
       pressed && !primaryDisabled ? styles.optionItemPressed : null,
     ],
-    [primaryDisabled, theme.colors.accent],
+    [primaryDisabled],
   );
 
-  const containerStyle = useMemo(
-    () => [
-      styles.container,
-      {
-        backgroundColor: theme.colors.surface1,
-        borderColor: theme.colors.border,
-      },
-    ],
-    [theme.colors.surface1, theme.colors.border],
-  );
-  const questionTextStyle = useMemo(
-    () => [styles.questionText, { color: theme.colors.foreground }],
-    [theme.colors.foreground],
-  );
   // Single-select radios need a group; checkboxes are valid standalone.
   const optionsGroupAccessibility = useMemo(
     () =>
@@ -499,15 +456,6 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
     () => [styles.actionsContainer, !isMobile && styles.actionsContainerDesktop],
     [isMobile],
   );
-  const dismissActionTextStyle = useMemo(
-    () => [styles.actionText, { color: theme.colors.foregroundMuted }],
-    [theme.colors.foregroundMuted],
-  );
-  const submitActionTextColor = theme.colors.accentForeground;
-  const submitActionTextStyle = useMemo(
-    () => [styles.actionText, { color: submitActionTextColor }],
-    [submitActionTextColor],
-  );
 
   if (!questions) {
     return null;
@@ -519,7 +467,7 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
   const showTextInput = activeQuestion ? questionShowsTextInput(activeQuestion) : false;
 
   return (
-    <View style={containerStyle} testID="question-form-card">
+    <View style={styles.container} testID="question-form-card">
       <QuestionNav
         questions={questions}
         activeIndex={resolvedActiveQuestionIndex}
@@ -528,7 +476,7 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
         onSelect={handleSelectQuestion}
       />
       <View style={styles.questionHeader}>
-        <Text testID="question-form-current-question" style={questionTextStyle}>
+        <Text testID="question-form-current-question" style={styles.questionText}>
           {activeQuestion?.question}
         </Text>
       </View>
@@ -579,11 +527,11 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
           testID="question-form-dismiss"
         >
           {respondingAction === "dismiss" ? (
-            <LoadingSpinner size="small" color={theme.colors.foregroundMuted} />
+            <ThemedLoadingSpinner size="small" uniProps={foregroundMutedColorMapping} />
           ) : (
             <View style={styles.actionContent}>
-              <X size={14} color={theme.colors.foregroundMuted} />
-              <Text style={dismissActionTextStyle}>{dismissLabel}</Text>
+              <ThemedX size={14} uniProps={foregroundMutedColorMapping} />
+              <Text style={[styles.actionText, styles.actionTextDismiss]}>{dismissLabel}</Text>
             </View>
           )}
         </Pressable>
@@ -597,11 +545,11 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
           testID="question-form-primary-action"
         >
           {respondingAction === "submit" ? (
-            <LoadingSpinner size="small" color={theme.colors.accentForeground} />
+            <ThemedLoadingSpinner size="small" uniProps={accentForegroundColorMapping} />
           ) : (
             <View style={styles.actionContent}>
-              <Check size={14} color={submitActionTextColor} />
-              <Text style={submitActionTextStyle}>{primaryActionLabel}</Text>
+              <ThemedCheck size={14} uniProps={accentForegroundColorMapping} />
+              <Text style={[styles.actionText, styles.actionTextSubmit]}>{primaryActionLabel}</Text>
             </View>
           )}
         </Pressable>
@@ -616,6 +564,8 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.spacing[2],
     borderWidth: 1,
     gap: theme.spacing[3],
+    backgroundColor: theme.colors.surface1,
+    borderColor: theme.colors.border,
   },
   questionBlock: {
     gap: theme.spacing[2],
@@ -633,6 +583,7 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.normal,
     lineHeight: 22,
+    color: theme.colors.foreground,
   },
   optionsWrap: {
     gap: theme.spacing[1],
@@ -654,9 +605,26 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.borderRadius.md,
     borderWidth: theme.borderWidth[1],
   },
+  questionNavButtonActive: {
+    backgroundColor: theme.colors.surface2,
+    borderColor: theme.colors.foregroundMuted,
+  },
+  questionNavButtonInactive: {
+    backgroundColor: theme.colors.surface1,
+    borderColor: theme.colors.border,
+  },
+  questionNavButtonHovered: {
+    backgroundColor: theme.colors.surface2,
+  },
   questionNavText: {
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.normal,
+  },
+  questionNavTextActive: {
+    color: theme.colors.foreground,
+  },
+  questionNavTextMuted: {
+    color: theme.colors.foregroundMuted,
   },
   optionItem: {
     flexDirection: "row",
@@ -664,6 +632,9 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.spacing[3],
     paddingVertical: theme.spacing[2],
     borderRadius: theme.borderRadius.md,
+  },
+  optionItemHighlighted: {
+    backgroundColor: theme.colors.surface2,
   },
   optionItemPressed: {
     opacity: 0.9,
@@ -683,9 +654,16 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: theme.fontWeight.normal,
     lineHeight: 22,
   },
+  optionLabelSelected: {
+    color: theme.colors.foreground,
+  },
+  optionLabelMuted: {
+    color: theme.colors.foregroundMuted,
+  },
   optionDescription: {
     fontSize: theme.fontSize.base,
     lineHeight: 20,
+    color: theme.colors.foregroundMuted,
   },
   selectionControl: {
     width: 18,
@@ -701,10 +679,20 @@ const styles = StyleSheet.create((theme) => ({
   selectionControlRadio: {
     borderRadius: 999,
   },
+  selectionControlSelected: {
+    borderColor: theme.colors.accent,
+  },
+  selectionControlUnselected: {
+    borderColor: theme.colors.foregroundExtraMuted,
+  },
+  selectionControlFilled: {
+    backgroundColor: theme.colors.accent,
+  },
   selectionRadioDot: {
     width: 8,
     height: 8,
     borderRadius: 999,
+    backgroundColor: theme.colors.accent,
   },
   otherInput: {
     borderWidth: 1,
@@ -712,6 +700,14 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.spacing[3],
     paddingVertical: theme.spacing[3],
     fontSize: theme.fontSize.base,
+    color: theme.colors.foreground,
+    backgroundColor: theme.colors.surface2,
+  },
+  otherInputFilled: {
+    borderColor: theme.colors.borderAccent,
+  },
+  otherInputEmpty: {
+    borderColor: theme.colors.border,
   },
   actionsContainer: {
     gap: theme.spacing[2],
@@ -728,6 +724,20 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
     borderWidth: theme.borderWidth[1],
   },
+  actionButtonDismiss: {
+    backgroundColor: theme.colors.surface1,
+    borderColor: theme.colors.borderAccent,
+  },
+  actionButtonDismissHovered: {
+    backgroundColor: theme.colors.surface2,
+  },
+  actionButtonSubmit: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
+  },
+  actionButtonSubmitDisabled: {
+    opacity: 0.5,
+  },
   actionContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -735,5 +745,11 @@ const styles = StyleSheet.create((theme) => ({
   },
   actionText: {
     fontSize: theme.fontSize.base,
+  },
+  actionTextDismiss: {
+    color: theme.colors.foregroundMuted,
+  },
+  actionTextSubmit: {
+    color: theme.colors.accentForeground,
   },
 }));

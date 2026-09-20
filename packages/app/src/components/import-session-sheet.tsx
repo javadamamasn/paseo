@@ -8,7 +8,7 @@ import type {
 } from "@getpaseo/client/internal/daemon-client";
 import type { AgentProvider } from "@getpaseo/protocol/agent-types";
 import { ChevronDown, Inbox, Layers, RotateCw } from "lucide-react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { AdaptiveModalSheet, type SheetHeader } from "@/components/adaptive-modal-sheet";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -21,6 +21,7 @@ import { useHostProjects } from "@/projects/host-projects";
 import { useHostFeature } from "@/runtime/host-features";
 import { useHosts } from "@/runtime/host-runtime";
 import { i18n } from "@/i18n/i18next";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import {
   aggregateSessionEntries,
   ALL_FILTER_VALUE,
@@ -46,6 +47,16 @@ const IMPORT_SHEET_SNAP_POINTS = ["70%", "92%"];
 const DISABLED_ACCESSIBILITY_STATE = { disabled: true };
 /** Long enough that a typed word is one request, short enough to feel live. */
 const SEARCH_DEBOUNCE_MS = 200;
+
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+const ThemedRotateCw = withUnistyles(RotateCw);
+const ThemedInbox = withUnistyles(Inbox);
+const ThemedLayers = withUnistyles(Layers);
+const ThemedChevronDown = withUnistyles(ChevronDown);
+
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
 
 type RecentProviderSessionsClient = Pick<
   DaemonClient,
@@ -147,7 +158,6 @@ function SheetStatusMessages({
   hasRows,
   importErrored,
 }: SheetStatusMessagesProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   if (!isClientReady) {
     return <Text style={styles.statusText}>{t("importSession.status.connectHost")}</Text>;
@@ -162,7 +172,7 @@ function SheetStatusMessages({
       ) : null}
       {isLoadingSessions && !hasRows ? (
         <View style={styles.statusRow}>
-          <LoadingSpinner color={theme.colors.foregroundMuted} />
+          <ThemedLoadingSpinner uniProps={foregroundMutedColorMapping} />
           <Text style={styles.statusText}>{t("importSession.status.loading")}</Text>
         </View>
       ) : null}
@@ -216,7 +226,6 @@ function ProviderErrorBannerRow({
 }
 
 function RefreshAction({ isRefreshing, onPress }: { isRefreshing: boolean; onPress: () => void }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const pressableStyle = useCallback(
     ({ pressed }: PressableStateCallbackType) => [
@@ -236,9 +245,9 @@ function RefreshAction({ isRefreshing, onPress }: { isRefreshing: boolean; onPre
     >
       <View style={styles.refreshIconSlot}>
         {isRefreshing ? (
-          <LoadingSpinner color={theme.colors.foregroundMuted} />
+          <ThemedLoadingSpinner uniProps={foregroundMutedColorMapping} />
         ) : (
-          <RotateCw size={16} color={theme.colors.foregroundMuted} />
+          <ThemedRotateCw size={16} uniProps={foregroundMutedColorMapping} />
         )}
       </View>
     </Pressable>
@@ -278,11 +287,10 @@ function ScopeSubtitle({
 }
 
 function SheetEmptyState({ title }: { title: string }) {
-  const { theme } = useUnistyles();
   return (
     <View style={styles.emptyState} testID="import-session-empty-state">
       <View style={styles.emptyStateIcon}>
-        <Inbox size={theme.iconSize.lg} color={theme.colors.foregroundMuted} strokeWidth={1.5} />
+        <ThemedInbox size={ICON_SIZE.lg} uniProps={foregroundMutedColorMapping} strokeWidth={1.5} />
       </View>
       <Text style={styles.emptyStateTitle}>{title}</Text>
     </View>
@@ -305,12 +313,12 @@ function ImportSessionSheetRow({
   folder: string | null;
   onImportSession: (entry: FetchRecentProviderSessionEntry) => void;
 }) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const title = getSessionTitle(entry);
   const promptPreview = getPromptPreview(entry);
   const lastActivity = formatTimeAgo(new Date(entry.lastActivityAt));
   const ProviderIcon = getProviderIcon(entry.providerId, serverId);
+  const ThemedProviderIcon = useMemo(() => withUnistyles(ProviderIcon), [ProviderIcon]);
   const accessibilityState = useMemo(
     () => (disabled ? DISABLED_ACCESSIBILITY_STATE : undefined),
     [disabled],
@@ -337,7 +345,7 @@ function ImportSessionSheetRow({
       testID={`import-session-session-${entry.providerId}-${entry.providerHandleId}`}
     >
       <View style={styles.rowIconWrap}>
-        <ProviderIcon size={theme.iconSize.md} color={theme.colors.foregroundMuted} />
+        <ThemedProviderIcon size={ICON_SIZE.md} uniProps={foregroundMutedColorMapping} />
       </View>
       <View style={styles.rowContent}>
         <View style={styles.rowHeader}>
@@ -409,7 +417,6 @@ export function ImportSessionSheet({
 }: ImportSessionSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { theme } = useUnistyles();
 
   // "Show all" widens a workspace-scoped sheet to the whole host. The sheet's own
   // `cwd` stays the scope it was opened with, because that is what decides where
@@ -555,13 +562,14 @@ export function ImportSessionSheet({
 
   const filterOptionIcons = useMemo(() => {
     const map = new Map<string, React.ReactNode>();
-    map.set(ALL_FILTER_VALUE, <Layers size={14} color={theme.colors.foregroundMuted} />);
+    map.set(ALL_FILTER_VALUE, <ThemedLayers size={14} uniProps={foregroundMutedColorMapping} />);
     for (const provider of filterProviders) {
       const ProviderIcon = getProviderIcon(provider, serverId);
-      map.set(provider, <ProviderIcon size={14} color={theme.colors.foregroundMuted} />);
+      const ThemedProviderIcon = withUnistyles(ProviderIcon);
+      map.set(provider, <ThemedProviderIcon size={14} uniProps={foregroundMutedColorMapping} />);
     }
     return map;
-  }, [filterProviders, serverId, theme.colors.foregroundMuted]);
+  }, [filterProviders, serverId]);
 
   const renderFilterOption = useCallback(
     ({
@@ -584,6 +592,16 @@ export function ImportSessionSheet({
       />
     ),
     [filterOptionIcons],
+  );
+
+  const selectedProviderIcon = useMemo(
+    () =>
+      selectedProvider === ALL_FILTER_VALUE ? null : getProviderIcon(selectedProvider, serverId),
+    [selectedProvider, serverId],
+  );
+  const ThemedSelectedProviderIcon = useMemo(
+    () => (selectedProviderIcon ? withUnistyles(selectedProviderIcon) : null),
+    [selectedProviderIcon],
   );
 
   const importMutation = useMutation({
@@ -737,18 +755,15 @@ export function ImportSessionSheet({
             accessibilityRole="button"
             accessibilityLabel={`Filter: ${selectedProviderLabel}`}
           >
-            {selectedProvider === ALL_FILTER_VALUE ? (
-              <Layers size={14} color={theme.colors.foregroundMuted} />
+            {selectedProvider === ALL_FILTER_VALUE || !ThemedSelectedProviderIcon ? (
+              <ThemedLayers size={14} uniProps={foregroundMutedColorMapping} />
             ) : (
-              (() => {
-                const ProviderIcon = getProviderIcon(selectedProvider, serverId);
-                return <ProviderIcon size={14} color={theme.colors.foregroundMuted} />;
-              })()
+              <ThemedSelectedProviderIcon size={14} uniProps={foregroundMutedColorMapping} />
             )}
             <Text style={styles.filterTriggerText} numberOfLines={1}>
               {selectedProviderLabel}
             </Text>
-            <ChevronDown size={14} color={theme.colors.foregroundMuted} />
+            <ThemedChevronDown size={14} uniProps={foregroundMutedColorMapping} />
           </Pressable>
           <Combobox
             options={filterComboboxOptions}

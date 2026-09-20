@@ -2,7 +2,7 @@ import { useCallback, useMemo, type ReactElement, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import type { GestureResponderEvent } from "react-native";
 import { Plus, Server, Settings } from "lucide-react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { HostStatusDot } from "@/components/host-status-dot";
 import { Combobox, ComboboxItem, type ComboboxProps } from "@/components/ui/combobox";
 import { useLocalDaemonServerId } from "@/hooks/use-is-local-daemon";
@@ -14,6 +14,7 @@ import {
   ENABLE_BUILT_IN_DAEMON_OPTION_ID,
   getHostPickerLabel,
 } from "./host-picker-constants";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 
 export {
   ADD_HOST_OPTION_ID,
@@ -23,6 +24,14 @@ export {
 };
 
 const SEARCHABLE_THRESHOLD = 10;
+
+const ThemedSettings = withUnistyles(Settings);
+const ThemedPlus = withUnistyles(Plus);
+const ThemedServer = withUnistyles(Server);
+
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
 type RenderHostOption = NonNullable<ComboboxProps["renderOption"]>;
 interface HostPickerHost {
   serverId: string;
@@ -73,7 +82,6 @@ export function HostPickerOption({
   onOpenHostSettings,
   testID,
 }: HostPickerOptionProps): ReactElement {
-  const { theme } = useUnistyles();
   const activeConnection = useHostRuntimeSnapshot(serverId)?.activeConnection ?? null;
   const connectionLabel =
     showActiveConnection && activeConnection
@@ -96,16 +104,10 @@ export function HostPickerOption({
         accessibilityRole="button"
         accessibilityLabel={`Open ${label} settings`}
       >
-        <Settings size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+        <ThemedSettings size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />
       </Pressable>
     );
-  }, [
-    handleSettingsPress,
-    label,
-    onOpenHostSettings,
-    theme.colors.foregroundMuted,
-    theme.iconSize.sm,
-  ]);
+  }, [handleSettingsPress, label, onOpenHostSettings]);
 
   return (
     <ComboboxItem
@@ -140,12 +142,11 @@ function SystemHostPickerOption({
   kind: "add" | "all" | "enableBuiltInDaemon";
   testID?: string;
 }): ReactElement {
-  const { theme } = useUnistyles();
-  const Icon = kind === "add" ? Plus : Server;
+  const Icon = kind === "add" ? ThemedPlus : ThemedServer;
   const label = SYSTEM_HOST_PICKER_OPTION_LABELS[kind];
   const leadingSlot = useMemo(
-    () => <Icon size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />,
-    [Icon, theme.colors.foregroundMuted, theme.iconSize.sm],
+    () => <Icon size={ICON_SIZE.sm} uniProps={foregroundMutedColorMapping} />,
+    [Icon],
   );
 
   return (

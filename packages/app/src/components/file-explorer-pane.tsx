@@ -23,7 +23,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { EditingTextInput as TextInput } from "@/components/ui/text-input";
-import { StyleSheet, useUnistyles, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { isWeb } from "@/constants/platform";
 import * as Clipboard from "expo-clipboard";
@@ -49,7 +49,7 @@ import {
   useOverlayFlatListScrollbar,
   type OverlayFlatListScrollbar,
 } from "@/components/ui/overlay-scrollbar/use-overlay-flat-list-scrollbar";
-import type { Theme } from "@/styles/theme";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import type {
   AgentFileExplorerState,
   ExplorerDirectory,
@@ -86,8 +86,17 @@ const SORT_OPTIONS: { value: SortOption }[] = [
 ];
 
 const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+const ThemedExplorerChevronDown = withUnistyles(ChevronDown);
+const ThemedExplorerFilePlus = withUnistyles(FilePlus);
+const ThemedExplorerFolderPlus = withUnistyles(FolderPlus);
+const ThemedExplorerEye = withUnistyles(Eye);
+const ThemedExplorerEyeOff = withUnistyles(EyeOff);
+const ThemedExplorerRotateCw = withUnistyles(RotateCw);
 const foregroundMutedColorMapping = (theme: Theme) => ({
   color: theme.colors.foregroundMuted,
+});
+const foregroundExtraMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundExtraMuted,
 });
 
 function DirectoryChevronIcon({ loading, expanded }: { loading: boolean; expanded: boolean }) {
@@ -1152,7 +1161,6 @@ interface FileExplorerPaneContentProps {
 }
 
 function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const {
     error,
@@ -1234,7 +1242,7 @@ function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
           <Text style={styles.sortTriggerText} testID="files-sort-label">
             {currentSortLabel}
           </Text>
-          <ChevronDown size={12} color={theme.colors.foregroundMuted} />
+          <ThemedExplorerChevronDown size={ICON_SIZE.xs} uniProps={foregroundMutedColorMapping} />
         </Pressable>
         <ToolbarControls style={styles.headerActions}>
           {onNewEntryAtRoot ? (
@@ -1246,9 +1254,9 @@ function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
                 testID="files-new-file"
                 onPress={handleNewFileAtRoot}
               >
-                <FilePlus
+                <ThemedExplorerFilePlus
                   size={paneContentToolbarIconSize(isCompact)}
-                  color={theme.colors.foregroundExtraMuted}
+                  uniProps={foregroundExtraMutedColorMapping}
                 />
               </ToolbarButton>
               <ToolbarButton
@@ -1258,9 +1266,9 @@ function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
                 testID="files-new-folder"
                 onPress={handleNewFolderAtRoot}
               >
-                <FolderPlus
+                <ThemedExplorerFolderPlus
                   size={paneContentToolbarIconSize(isCompact)}
-                  color={theme.colors.foregroundExtraMuted}
+                  uniProps={foregroundExtraMutedColorMapping}
                 />
               </ToolbarButton>
             </>
@@ -1274,14 +1282,14 @@ function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
             onPress={handleToggleHiddenFiles}
           >
             {showHiddenFiles ? (
-              <Eye
+              <ThemedExplorerEye
                 size={paneContentToolbarIconSize(isCompact)}
-                color={theme.colors.foregroundExtraMuted}
+                uniProps={foregroundExtraMutedColorMapping}
               />
             ) : (
-              <EyeOff
+              <ThemedExplorerEyeOff
                 size={paneContentToolbarIconSize(isCompact)}
-                color={theme.colors.foregroundExtraMuted}
+                uniProps={foregroundExtraMutedColorMapping}
               />
             )}
           </ToolbarButton>
@@ -1299,14 +1307,14 @@ function FileExplorerPaneContent(props: FileExplorerPaneContentProps) {
           >
             <View style={styles.refreshIcon}>
               {isRefreshFetching ? (
-                <LoadingSpinner
+                <ThemedLoadingSpinner
                   size={paneContentToolbarIconSize(isCompact)}
-                  color={theme.colors.foregroundExtraMuted}
+                  uniProps={foregroundExtraMutedColorMapping}
                 />
               ) : (
-                <RotateCw
+                <ThemedExplorerRotateCw
                   size={paneContentToolbarIconSize(isCompact)}
-                  color={theme.colors.foregroundExtraMuted}
+                  uniProps={foregroundExtraMutedColorMapping}
                 />
               )}
             </View>

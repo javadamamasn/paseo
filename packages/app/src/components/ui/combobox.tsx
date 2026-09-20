@@ -26,7 +26,8 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { EditingTextInputHandle } from "@/components/ui/text-input";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import {
   BottomSheetScrollView,
@@ -75,6 +76,12 @@ import { buildDesktopFrameStyle } from "./combobox-frame-style";
 export { buildDesktopFrameStyle } from "./combobox-frame-style";
 
 const IS_WEB = isWeb;
+
+const ThemedComboboxSearch = withUnistyles(Search);
+const ThemedComboboxFolder = withUnistyles(Folder);
+const ThemedComboboxFile = withUnistyles(File);
+const ThemedComboboxCheck = withUnistyles(Check);
+const mutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
 
 export type ComboboxOption = ComboboxOptionModel;
 export type ComboboxDesktopPlacement = "top-start" | "bottom-start";
@@ -161,19 +168,7 @@ function toNumericStyleValue(value: unknown): number | null {
 }
 
 function ComboboxSheetBackground({ style }: BottomSheetBackgroundProps) {
-  const { theme } = useUnistyles();
-
-  const combinedStyle = useMemo(
-    () => [
-      style,
-      {
-        backgroundColor: theme.colors.surface0,
-        borderTopLeftRadius: theme.borderRadius["2xl"],
-        borderTopRightRadius: theme.borderRadius["2xl"],
-      },
-    ],
-    [style, theme.colors.surface0, theme.borderRadius],
-  );
+  const combinedStyle = useMemo(() => [style, styles.comboboxSheetBackground], [style]);
 
   return <Animated.View pointerEvents="none" style={combinedStyle} />;
 }
@@ -195,7 +190,6 @@ export function SearchInput({
   useBottomSheetInput: _useBottomSheetInput = false,
   resetKey,
 }: SearchInputProps): ReactElement {
-  const { theme } = useUnistyles();
   const inputRef = useRef<EditingTextInputHandle>(null);
 
   useEffect(() => {
@@ -209,13 +203,13 @@ export function SearchInput({
 
   return (
     <View style={styles.searchInputContainer}>
-      <Search size={16} color={theme.colors.foregroundMuted} />
+      <ThemedComboboxSearch size={ICON_SIZE.md} uniProps={mutedColorMapping} />
       <AdaptiveTextInput
         ref={inputRef}
         // @ts-expect-error - outlineStyle is web-only
         style={[styles.searchInput, IS_WEB && { outlineStyle: "none" }]}
         placeholder={placeholder}
-        placeholderTextColor={theme.colors.foregroundMuted}
+        placeholderTextColor={styles.searchPlaceholder.color}
         resetKey={resetKey}
         onChangeText={onChangeText}
         autoCapitalize="none"
@@ -256,21 +250,19 @@ export function ComboboxItem({
   onPress,
   testID,
 }: ComboboxItemProps): ReactElement {
-  const { theme } = useUnistyles();
-
   let leadingContent: ReactElement | null = null;
   if (leadingSlot) {
     leadingContent = <View style={styles.comboboxItemLeadingSlot}>{leadingSlot}</View>;
   } else if (kind === "directory") {
     leadingContent = (
       <View style={styles.comboboxItemLeadingSlot}>
-        <Folder size={16} color={theme.colors.foregroundMuted} />
+        <ThemedComboboxFolder size={ICON_SIZE.md} uniProps={mutedColorMapping} />
       </View>
     );
   } else if (kind === "file") {
     leadingContent = (
       <View style={styles.comboboxItemLeadingSlot}>
-        <File size={16} color={theme.colors.foregroundMuted} />
+        <ThemedComboboxFile size={ICON_SIZE.md} uniProps={mutedColorMapping} />
       </View>
     );
   }
@@ -314,7 +306,9 @@ export function ComboboxItem({
       {selected || trailingSlot ? (
         <View style={styles.comboboxItemTrailingContainer}>
           <View style={styles.comboboxItemTrailingSlot}>
-            {selected ? <Check size={16} color={theme.colors.foregroundMuted} /> : null}
+            {selected ? (
+              <ThemedComboboxCheck size={ICON_SIZE.md} uniProps={mutedColorMapping} />
+            ) : null}
           </View>
           {trailingSlot}
         </View>
@@ -921,7 +915,6 @@ interface MobileBodyProps {
   handleSheetChange: BottomSheetVisibility["handleSheetChange"];
   handleSheetDismiss: BottomSheetVisibility["handleSheetDismiss"];
   handleIndicatorStyle: { backgroundColor: string };
-  titleColor: string;
   title: string;
   header: SheetHeader | undefined;
   onClose: () => void;
@@ -960,10 +953,6 @@ function MobileComboboxBody(props: MobileBodyProps): ReactElement {
     [],
   );
 
-  const comboboxTitleStyle = useMemo(
-    () => [styles.comboboxTitle, { color: props.titleColor }],
-    [props.titleColor],
-  );
   const frameStyle = useMemo(
     () => [styles.mobileSheetFrame, { paddingBottom: props.safeAreaBottom }],
     [props.safeAreaBottom],
@@ -1005,9 +994,7 @@ function MobileComboboxBody(props: MobileBodyProps): ReactElement {
         ) : (
           <>
             <View style={styles.bottomSheetHeader}>
-              <Text key={props.titleColor} style={comboboxTitleStyle}>
-                {props.title}
-              </Text>
+              <Text style={styles.comboboxTitle}>{props.title}</Text>
             </View>
             {props.stickyHeader}
             {!props.hasChildren && props.searchable ? (
@@ -1308,14 +1295,12 @@ export function Combobox({
   children,
 }: ComboboxProps): ReactElement | null {
   const { t } = useTranslation();
-  const { theme } = useUnistyles();
   const resolvedPlaceholder = placeholder ?? t("common.placeholders.search");
   const resolvedEmptyText = emptyText ?? t("common.empty.noOptionsMatchSearch");
   const resolvedTitle = title ?? t("common.actions.select");
   const isMobile = useIsCompactFormFactor();
   const floatingLayer = useOverlayLayer("floating");
   const safeAreaInsets = useSafeAreaInsets();
-  const titleColor = theme.colors.foreground;
   const effectiveOptionsPosition = resolveEffectiveOptionsPosition(isMobile, optionsPosition);
   const isDesktopAboveSearch = resolveIsDesktopAboveSearch(isMobile, effectiveOptionsPosition);
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
@@ -1538,10 +1523,7 @@ export function Combobox({
 
   useDismissKeyboardOnOpen(isOpen, isMobile);
 
-  const handleIndicatorStyle = useMemo(
-    () => ({ backgroundColor: theme.colors.palette.zinc[600] }),
-    [theme.colors.palette.zinc],
-  );
+  const handleIndicatorStyle = styles.comboboxHandleIndicator;
 
   const desktopFrameStyle = useMemo(
     () =>
@@ -1581,7 +1563,6 @@ export function Combobox({
         handleSheetChange={handleSheetChange}
         handleSheetDismiss={handleSheetDismiss}
         handleIndicatorStyle={handleIndicatorStyle}
-        titleColor={titleColor}
         title={resolvedTitle}
         header={header}
         onClose={handleClose}
@@ -1657,6 +1638,11 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     minHeight: 0,
   },
+  comboboxSheetBackground: {
+    backgroundColor: theme.colors.surface0,
+    borderTopLeftRadius: theme.borderRadius["2xl"],
+    borderTopRightRadius: theme.borderRadius["2xl"],
+  },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -1672,6 +1658,9 @@ const styles = StyleSheet.create((theme) => ({
     paddingVertical: theme.spacing[3],
     color: theme.colors.foreground,
     fontSize: theme.fontSize.base,
+  },
+  searchPlaceholder: {
+    color: theme.colors.foregroundMuted,
   },
   comboboxItem: {
     flexDirection: "row",
@@ -1751,11 +1740,15 @@ const styles = StyleSheet.create((theme) => ({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
+  comboboxHandleIndicator: {
+    backgroundColor: theme.colors.palette.zinc[600],
+  },
   bottomSheetHeader: {
     paddingHorizontal: theme.spacing[6],
     paddingBottom: theme.spacing[2],
   },
   comboboxTitle: {
+    color: theme.colors.foreground,
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.medium,
     textAlign: "left",

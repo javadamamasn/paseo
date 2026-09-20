@@ -1,7 +1,7 @@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useCallback, useMemo } from "react";
 import { View, Text, Pressable, type PressableStateCallbackType } from "react-native";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { ChevronDown, GitBranch, MoreVertical } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Shortcut } from "@/components/ui/shortcut";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
-import { inlineUnistylesStyle } from "@/styles/unistyles-inline-style";
+import { ICON_SIZE, type Theme } from "@/styles/theme";
 import type { ShortcutKey } from "@/utils/format-shortcut";
 import type { GitAction, GitActions } from "@/git/policy";
 import { useGitActionRunner } from "@/git/use-actions";
@@ -24,6 +24,19 @@ interface GitActionsSplitButtonProps {
   hideLabels?: boolean;
   menuOnly?: boolean;
 }
+
+const ThemedGitBranch = withUnistyles(GitBranch);
+const ThemedChevronDown = withUnistyles(ChevronDown);
+const ThemedMoreVertical = withUnistyles(MoreVertical);
+const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
+
+const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
+const foregroundMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundMuted,
+});
+const foregroundExtraMutedColorMapping = (theme: Theme) => ({
+  color: theme.colors.foregroundExtraMuted,
+});
 
 interface GitActionMenuItemProps {
   action: GitAction;
@@ -80,7 +93,6 @@ export function GitActionsSplitButton({
   hideLabels,
   menuOnly = false,
 }: GitActionsSplitButtonProps) {
-  const { theme } = useUnistyles();
   const { t } = useTranslation();
   const runGitAction = useGitActionRunner();
   const archiveShortcutKeys = useShortcutKeys("archive-workspace");
@@ -104,29 +116,26 @@ export function GitActionsSplitButton({
   const primaryPressableStyle = useCallback(
     ({ hovered, pressed }: PressableStateCallbackType & { hovered?: boolean }) => [
       styles.splitButtonPrimary,
-      (Boolean(hovered) || pressed) &&
-        inlineUnistylesStyle({ backgroundColor: theme.colors.surface2 }),
+      (Boolean(hovered) || pressed) && styles.splitButtonPrimaryHovered,
       primaryDisabled && styles.splitButtonPrimaryDisabled,
     ],
-    [primaryDisabled, theme.colors.surface2],
+    [primaryDisabled],
   );
 
   const caretTriggerStyle = useCallback(
     ({ hovered, pressed, open }: { hovered: boolean; pressed: boolean; open: boolean }) => [
       styles.splitButtonCaret,
-      (hovered || pressed || open) &&
-        inlineUnistylesStyle({ backgroundColor: theme.colors.surface2 }),
+      (hovered || pressed || open) && styles.splitButtonCaretHovered,
     ],
-    [theme.colors.surface2],
+    [],
   );
 
   const menuOnlyTriggerStyle = useCallback(
     ({ hovered, pressed, open }: { hovered: boolean; pressed: boolean; open: boolean }) => [
       styles.menuOnlyTrigger,
-      (hovered || pressed || open) &&
-        inlineUnistylesStyle({ backgroundColor: theme.colors.surface2 }),
+      (hovered || pressed || open) && styles.menuOnlyTriggerHovered,
     ],
-    [theme.colors.surface2],
+    [],
   );
 
   const menuOnlyActions = useMemo(
@@ -151,8 +160,8 @@ export function GitActionsSplitButton({
           accessibilityRole="button"
           accessibilityLabel={t("workspace.header.actions.workspaceActions")}
         >
-          <GitBranch size={16} color={theme.colors.foregroundMuted} />
-          <ChevronDown size={12} color={theme.colors.foregroundExtraMuted} />
+          <ThemedGitBranch size={ICON_SIZE.md} uniProps={foregroundMutedColorMapping} />
+          <ThemedChevronDown size={ICON_SIZE.xs} uniProps={foregroundExtraMutedColorMapping} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" testID="changes-primary-cta-menu">
           {menuOnlyActions.map((action, index) => (
@@ -193,9 +202,9 @@ export function GitActionsSplitButton({
             accessibilityLabel={gitActions.primary.label}
           >
             {gitActions.primary.status === "pending" ? (
-              <LoadingSpinner
+              <ThemedLoadingSpinner
                 size="small"
-                color={theme.colors.foreground}
+                uniProps={foregroundColorMapping}
                 style={styles.splitButtonSpinnerOnly}
               />
             ) : (
@@ -217,7 +226,10 @@ export function GitActionsSplitButton({
                 accessibilityRole="button"
                 accessibilityLabel={t("workspace.git.actions.moreOptions")}
               >
-                <ChevronDown size={16} color={theme.colors.foregroundExtraMuted} />
+                <ThemedChevronDown
+                  size={ICON_SIZE.md}
+                  uniProps={foregroundExtraMutedColorMapping}
+                />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" testID="changes-primary-cta-menu">
                 {gitActions.secondary.map((action, index) => (
@@ -250,7 +262,7 @@ export function GitActionsSplitButton({
             accessibilityRole="button"
             accessibilityLabel={t("workspace.git.actions.moreActions")}
           >
-            <MoreVertical size={16} color={theme.colors.foregroundMuted} />
+            <ThemedMoreVertical size={ICON_SIZE.md} uniProps={foregroundMutedColorMapping} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" width={220} testID="changes-overflow-content">
             {gitActions.menu.map((action) => (
@@ -295,6 +307,9 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: "center",
     position: "relative",
   },
+  splitButtonPrimaryHovered: {
+    backgroundColor: theme.colors.surface2,
+  },
   menuOnlyTrigger: {
     width: {
       xs: 48,
@@ -311,6 +326,9 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.borderRadius.md,
     borderWidth: theme.borderWidth[1],
     borderColor: theme.colors.borderAccent,
+  },
+  menuOnlyTriggerHovered: {
+    backgroundColor: theme.colors.surface2,
   },
   splitButtonPrimaryDisabled: {
     opacity: 0.6,
@@ -342,6 +360,9 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: "center",
     borderLeftWidth: theme.borderWidth[1],
     borderLeftColor: theme.colors.borderAccent,
+  },
+  splitButtonCaretHovered: {
+    backgroundColor: theme.colors.surface2,
   },
   iconButton: {
     width: {
