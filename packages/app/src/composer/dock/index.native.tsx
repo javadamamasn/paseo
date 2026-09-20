@@ -1,5 +1,6 @@
 import { ComposerDockBackground } from "./internal/background";
 export { ComposerDockBackground } from "./internal/background";
+import { GlassSurface } from "@/components/ui/glass-surface";
 import { ScrollView } from "@/components/ui/scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HEADER_INNER_HEIGHT, MAX_CONTENT_WIDTH } from "@/constants/layout";
@@ -129,6 +130,7 @@ export function ComposerDock({
           </View>
         </View>
         <ComposerViewportContent style={dockStyles.composer}>
+          <GlassSurface style={StyleSheet.absoluteFill} />
           <View style={[dockStyles.composer, { paddingBottom: insets.bottom }]}>{composer}</View>
         </ComposerViewportContent>
         {overlay}
