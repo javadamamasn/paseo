@@ -54,8 +54,8 @@ jobs:
           sed -i 's|<string name="app_name">.*</string>|<string name="app_name">Paseo Fork</string>|' android/app/src/main/res/values/strings.xml
           grep -n "applicationIdSuffix\|Paseo Fork" android/app/build.gradle android/app/src/main/res/values/strings.xml | head -4
 
-      - name: Gradle assembleDebug
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Gradle assembleDebug (arm64 only, smaller download)
+        run: ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
         working-directory: packages/app/android
 
       - name: Upload APK
