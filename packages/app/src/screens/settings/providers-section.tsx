@@ -102,7 +102,6 @@ const ThemedChevronRight = withUnistyles(ChevronRight);
 const ThemedMoreHorizontal = withUnistyles(MoreHorizontal);
 const ThemedTrash2 = withUnistyles(Trash2);
 const ThemedLoadingSpinner = withUnistyles(LoadingSpinner);
-const removeTrashLeading = <ThemedTrash2 size={ICON_SIZE.md} uniProps={dangerColorMapping} />;
 
 interface ProviderActionsMenuProps {
   providerId: string;
@@ -121,6 +120,10 @@ function ProviderActionsMenu({
   const handleRemove = useCallback(() => {
     onRemove(providerId, providerLabel);
   }, [onRemove, providerId, providerLabel]);
+  const removeLeading = useMemo(
+    () => <ThemedTrash2 size={ICON_SIZE.md} uniProps={dangerColorMapping} />,
+    [],
+  );
   const triggerStyle = useCallback(
     ({
       pressed,
@@ -155,7 +158,7 @@ function ProviderActionsMenu({
       <DropdownMenuContent align="end" width={220}>
         <DropdownMenuItem
           destructive
-          leading={removeTrashLeading}
+          leading={removeLeading}
           onSelect={handleRemove}
           status={isRemoving ? "pending" : "idle"}
           pendingLabel={t("settings.providers.actions.removing")}

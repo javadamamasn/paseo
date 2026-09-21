@@ -44,7 +44,10 @@ const { theme, snapshotState, configState, patchConfigMock, openProviderSettings
 );
 
 vi.mock("react-native", () => ({
-  Platform: { OS: "web" },
+  Platform: {
+    OS: "web",
+    select: (options: Record<string, unknown>) => options.web ?? options.native ?? options.default,
+  },
   View: ({ children, testID }: { children?: React.ReactNode; testID?: string }) =>
     React.createElement("div", { "data-testid": testID }, children),
   Text: ({ children }: { children?: React.ReactNode }) =>
@@ -92,6 +95,7 @@ vi.mock("react-native-unistyles", () => ({
       typeof factory === "function" ? (factory as (t: typeof theme) => unknown)(theme) : factory,
   },
   useUnistyles: () => ({ theme, rt: { breakpoint: "md" } }),
+  withUnistyles: (component: unknown) => component,
 }));
 
 vi.mock("lucide-react-native", () => {

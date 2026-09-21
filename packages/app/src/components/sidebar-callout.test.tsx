@@ -40,6 +40,7 @@ vi.mock("react-native-unistyles", () => ({
       typeof factory === "function" ? (factory as (t: typeof theme) => unknown)(theme) : factory,
   },
   useUnistyles: () => ({ theme }),
+  withUnistyles: (component: unknown) => component,
 }));
 
 vi.mock("lucide-react-native", () => {
