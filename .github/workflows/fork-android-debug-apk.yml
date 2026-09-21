@@ -28,10 +28,7 @@ jobs:
           java-version: "17"
 
       - name: Accept Android licenses
-        run: yes | sdkmanager --licenses > /dev/null
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || echo "licenses already accepted"
 
       - name: Install JS dependencies
         run: npm ci --no-audit --no-fund
