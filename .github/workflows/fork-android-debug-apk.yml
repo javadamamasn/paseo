@@ -37,6 +37,19 @@ jobs:
       - name: Expo prebuild (production variant)
         run: npx cross-env APP_VARIANT=production expo prebuild --platform android --clean --non-interactive
 
+      - name: Side-by-side install (fork suffix + label)
+        run: |
+          python3 - <<'EOF'
+          import re
+          p = "android/app/build.gradle"
+          s = open(p).read()
+          s2, n = re.subn(r"(debug\s*\{)", '\\1\n            applicationIdSuffix ".debug"\n            versionNameSuffix "-fork"', s, count=1)
+          assert n == 1, "debug block not found"
+          open(p, "w").write(s2)
+          EOF
+          sed -i 's|<string name="app_name">.*</string>|<string name="app_name">Paseo Fork</string>|' android/app/src/main/res/values/strings.xml
+          grep -n "applicationIdSuffix\|Paseo Fork" android/app/build.gradle android/app/src/main/res/values/strings.xml | head -4
+
       - name: Gradle assembleDebug
         run: ./gradlew assembleDebug --no-daemon
         working-directory: packages/app/android
