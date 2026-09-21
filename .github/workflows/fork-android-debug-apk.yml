@@ -43,9 +43,13 @@ jobs:
           import re
           p = "android/app/build.gradle"
           s = open(p).read()
-          s2, n = re.subn(r"(debug\s*\{)", '\\1\n            applicationIdSuffix ".debug"\n            versionNameSuffix "-fork"', s, count=1)
-          assert n == 1, "debug block not found"
-          open(p, "w").write(s2)
+          bt = re.search(r"buildTypes\s*\{", s)
+          assert bt, "buildTypes block not found"
+          dbg = re.search(r"debug\s*\{", s[bt.end():])
+          assert dbg, "debug buildType not found"
+          at = bt.end() + dbg.end()
+          s = s[:at] + '\n            applicationIdSuffix ".debug"\n            versionNameSuffix "-fork"' + s[at:]
+          open(p, "w").write(s)
           EOF
           sed -i 's|<string name="app_name">.*</string>|<string name="app_name">Paseo Fork</string>|' android/app/src/main/res/values/strings.xml
           grep -n "applicationIdSuffix\|Paseo Fork" android/app/build.gradle android/app/src/main/res/values/strings.xml | head -4
