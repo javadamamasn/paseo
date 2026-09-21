@@ -1,0 +1,48 @@
+name: Fork Android Debug APK
+
+# Fork-local visual loop: builds an installable debug APK directly with Gradle
+# (no EAS, no signing keys, no paid worker). Debug APKs skip the Hermes AOT
+# compile that OOM-kills medium EAS workers (exit 137), so this fits the free
+# GitHub runner. Trigger manually: Actions -> Fork Android Debug APK -> Run.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install JS dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: .
+
+      - name: Expo prebuild (production variant)
+        run: npx cross-env APP_VARIANT=production expo prebuild --platform android --clean --non-interactive
+
+      - name: Gradle assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: packages/app/android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: paseo-fork-debug-apk
+          path: packages/app/android/app/build/outputs/apk/debug/app-debug.apk
